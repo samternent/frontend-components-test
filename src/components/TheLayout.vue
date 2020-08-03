@@ -1,5 +1,5 @@
 <template>
-  <v-app>
+  <v-app id="fresh">
     <slot name="header">
       <the-header/>
     </slot>
