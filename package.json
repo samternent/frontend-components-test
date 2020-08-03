@@ -1,11 +1,11 @@
 {
-  "name": "@teamwork/frontend-components",
+  "name": "frontend-components",
   "version": "0.1.0",
   "private": true,
-  "main": "./dist/@teamwork/frontend-components.umd.js",
+  "main": "./dist/frontend-components.umd.js",
   "scripts": {
     "serve": "vue-cli-service serve",
-    "build": "vue-cli-service build --target lib --name @teamwork/frontend-components index.js",
+    "build": "vue-cli-service build --target lib --name frontend-components index.js",
     "lint": "vue-cli-service lint"
   },
   "dependencies": {

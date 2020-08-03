@@ -4,9 +4,9 @@
 	else if(typeof define === 'function' && define.amd)
 		define([], factory);
 	else if(typeof exports === 'object')
-		exports["@teamwork/frontend-components"] = factory(require("vue"));
+		exports["frontend-components"] = factory(require("vue"));
 	else
-		root["@teamwork/frontend-components"] = factory(root["Vue"]);
+		root["frontend-components"] = factory(root["Vue"]);
 })((typeof self !== 'undefined' ? self : this), function(__WEBPACK_EXTERNAL_MODULE__8bbf__) {
 return /******/ (function(modules) { // webpackBootstrap
 /******/ 	// The module cache
