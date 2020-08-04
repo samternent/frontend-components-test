@@ -6,12 +6,14 @@
         :hasChat="false"
         :hasNotifications="false"/>
     </slot>
-    <v-main>
+    <v-flex row>
       <the-sidebar>
         <slot name='the-sidebar'/>
       </the-sidebar>
-      <slot/>
-    </v-main>
+      <v-main>
+        <slot/>
+      </v-main>
+    </v-flex>
   </v-app>
 </template>
 

@@ -1,16 +1,14 @@
 <template>
-  <v-app>
-    <the-layout>
-      <template v-slot:the-sidebar>
-        <v-treeview :items="items"></v-treeview>
-      </template>
-      <router-view/>
-    </the-layout>
-  </v-app>
+  <the-layout>
+    <template v-slot:the-sidebar>
+      <v-treeview :items="items"></v-treeview>
+    </template>
+  </the-layout>
 </template>
 
 <script>
 import TheLayout from './components/layout/TheLayout';
+
 export default {
   name: 'FrontendComponents',
   components: { TheLayout },

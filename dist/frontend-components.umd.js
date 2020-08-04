@@ -18143,22 +18143,21 @@ var TheHeader_component = normalizeComponent(
 
 installComponents_default()(TheHeader_component, {VAppBar: VAppBar_VAppBar,VAvatar: VAvatar_VAvatar,VBadge: VBadge_VBadge,VBtn: VBtn_VBtn,VIcon: components_VIcon_VIcon,VImg: VImg_VImg,VList: VList_VList,VListItem: VList_VListItem,VListItemAvatar: VListItemAvatar,VListItemContent: VListItemContent,VListItemSubtitle: VListItemSubtitle,VListItemTitle: VListItemTitle,VMenu: VMenu_VMenu,VSpacer: VSpacer,VTextField: VTextField_VTextField,VToolbarTitle: VToolbarTitle})
 
-// CONCATENATED MODULE: ./node_modules/cache-loader/dist/cjs.js?{"cacheDirectory":"node_modules/.cache/vue-loader","cacheIdentifier":"a5a5bfc4-vue-loader-template"}!./node_modules/vue-loader/lib/loaders/templateLoader.js??vue-loader-options!./node_modules/cache-loader/dist/cjs.js??ref--0-0!./node_modules/vue-loader/lib??vue-loader-options!./src/components/layout/TheLayout.vue?vue&type=template&id=f7f86d42&
-var TheLayoutvue_type_template_id_f7f86d42_render = function () {var _vm=this;var _h=_vm.$createElement;var _c=_vm._self._c||_h;return _c('v-app',{attrs:{"id":"fresh"}},[_vm._t("the-header",[_c('the-header',{attrs:{"hasSearch":true,"hasChat":false,"hasNotifications":false}})]),_c('v-main',[_c('the-sidebar',[_vm._t("the-sidebar")],2),_vm._t("default")],2)],2)}
-var TheLayoutvue_type_template_id_f7f86d42_staticRenderFns = []
+// CONCATENATED MODULE: ./node_modules/cache-loader/dist/cjs.js?{"cacheDirectory":"node_modules/.cache/vue-loader","cacheIdentifier":"a5a5bfc4-vue-loader-template"}!./node_modules/vue-loader/lib/loaders/templateLoader.js??vue-loader-options!./node_modules/cache-loader/dist/cjs.js??ref--0-0!./node_modules/vue-loader/lib??vue-loader-options!./src/components/layout/TheLayout.vue?vue&type=template&id=4e65a7ca&
+var TheLayoutvue_type_template_id_4e65a7ca_render = function () {var _vm=this;var _h=_vm.$createElement;var _c=_vm._self._c||_h;return _c('v-app',{attrs:{"id":"fresh"}},[_vm._t("the-header",[_c('the-header',{attrs:{"hasSearch":true,"hasChat":false,"hasNotifications":false}})]),_c('v-flex',{attrs:{"row":""}},[_c('the-sidebar',[_vm._t("the-sidebar")],2),_c('v-main',[_vm._t("default")],2)],1)],2)}
+var TheLayoutvue_type_template_id_4e65a7ca_staticRenderFns = []
 
 
-// CONCATENATED MODULE: ./src/components/layout/TheLayout.vue?vue&type=template&id=f7f86d42&
+// CONCATENATED MODULE: ./src/components/layout/TheLayout.vue?vue&type=template&id=4e65a7ca&
 
-// CONCATENATED MODULE: ./node_modules/cache-loader/dist/cjs.js?{"cacheDirectory":"node_modules/.cache/vue-loader","cacheIdentifier":"a5a5bfc4-vue-loader-template"}!./node_modules/vue-loader/lib/loaders/templateLoader.js??vue-loader-options!./node_modules/cache-loader/dist/cjs.js??ref--0-0!./node_modules/vue-loader/lib??vue-loader-options!./src/components/layout/TheSidebar.vue?vue&type=template&id=29e45fb6&
-var TheSidebarvue_type_template_id_29e45fb6_render = function () {var _vm=this;var _h=_vm.$createElement;var _c=_vm._self._c||_h;return _c('v-card',{attrs:{"height":"100%"}},[_c('v-navigation-drawer',{attrs:{"permanent":"","absolute":""},model:{value:(_vm.drawer),callback:function ($$v) {_vm.drawer=$$v},expression:"drawer"}},[_vm._t("default")],2)],1)}
-var TheSidebarvue_type_template_id_29e45fb6_staticRenderFns = []
+// CONCATENATED MODULE: ./node_modules/cache-loader/dist/cjs.js?{"cacheDirectory":"node_modules/.cache/vue-loader","cacheIdentifier":"a5a5bfc4-vue-loader-template"}!./node_modules/vue-loader/lib/loaders/templateLoader.js??vue-loader-options!./node_modules/cache-loader/dist/cjs.js??ref--0-0!./node_modules/vue-loader/lib??vue-loader-options!./src/components/layout/TheSidebar.vue?vue&type=template&id=ced29fa4&
+var TheSidebarvue_type_template_id_ced29fa4_render = function () {var _vm=this;var _h=_vm.$createElement;var _c=_vm._self._c||_h;return _c('v-card',[_c('v-navigation-drawer',{attrs:{"permanent":""},model:{value:(_vm.drawer),callback:function ($$v) {_vm.drawer=$$v},expression:"drawer"}},[_vm._t("default")],2)],1)}
+var TheSidebarvue_type_template_id_ced29fa4_staticRenderFns = []
 
 
-// CONCATENATED MODULE: ./src/components/layout/TheSidebar.vue?vue&type=template&id=29e45fb6&
+// CONCATENATED MODULE: ./src/components/layout/TheSidebar.vue?vue&type=template&id=ced29fa4&
 
 // CONCATENATED MODULE: ./node_modules/cache-loader/dist/cjs.js??ref--12-0!./node_modules/thread-loader/dist/cjs.js!./node_modules/babel-loader/lib!./node_modules/cache-loader/dist/cjs.js??ref--0-0!./node_modules/vue-loader/lib??vue-loader-options!./src/components/layout/TheSidebar.vue?vue&type=script&lang=js&
-//
 //
 //
 //
@@ -18180,8 +18179,8 @@ var TheSidebarvue_type_template_id_29e45fb6_staticRenderFns = []
       }, {
         title: 'About',
         icon: 'question_answer'
-      }],
-      right: null
+      }] // right: null
+
     };
   }
 });
@@ -18936,8 +18935,8 @@ var VNavigationDrawer_baseMixins = mixins(applicationable('left', ['isActive', '
 
 var TheSidebar_component = normalizeComponent(
   layout_TheSidebarvue_type_script_lang_js_,
-  TheSidebarvue_type_template_id_29e45fb6_render,
-  TheSidebarvue_type_template_id_29e45fb6_staticRenderFns,
+  TheSidebarvue_type_template_id_ced29fa4_render,
+  TheSidebarvue_type_template_id_ced29fa4_staticRenderFns,
   false,
   null,
   null,
@@ -18954,6 +18953,8 @@ var TheSidebar_component = normalizeComponent(
 installComponents_default()(TheSidebar_component, {VCard: VCard_VCard,VNavigationDrawer: VNavigationDrawer_VNavigationDrawer})
 
 // CONCATENATED MODULE: ./node_modules/cache-loader/dist/cjs.js??ref--12-0!./node_modules/thread-loader/dist/cjs.js!./node_modules/babel-loader/lib!./node_modules/cache-loader/dist/cjs.js??ref--0-0!./node_modules/vue-loader/lib??vue-loader-options!./src/components/layout/TheLayout.vue?vue&type=script&lang=js&
+//
+//
 //
 //
 //
@@ -19040,6 +19041,67 @@ var VApp = __webpack_require__("df86");
     }, [wrapper]);
   }
 }));
+// CONCATENATED MODULE: ./node_modules/vuetify/lib/components/VGrid/grid.js
+
+
+
+
+
+
+// Types
+
+function VGrid(name) {
+  /* @vue/component */
+  return external_commonjs_vue_commonjs2_vue_root_Vue_default.a.extend({
+    name: "v-".concat(name),
+    functional: true,
+    props: {
+      id: String,
+      tag: {
+        type: String,
+        default: 'div'
+      }
+    },
+    render: function render(h, _ref) {
+      var props = _ref.props,
+          data = _ref.data,
+          children = _ref.children;
+      data.staticClass = "".concat(name, " ").concat(data.staticClass || '').trim();
+      var attrs = data.attrs;
+
+      if (attrs) {
+        // reset attrs to extract utility clases like pa-3
+        data.attrs = {};
+        var classes = Object.keys(attrs).filter(function (key) {
+          // TODO: Remove once resolved
+          // https://github.com/vuejs/vue/issues/7841
+          if (key === 'slot') return false;
+          var value = attrs[key]; // add back data attributes like data-test="foo" but do not
+          // add them as classes
+
+          if (key.startsWith('data-')) {
+            data.attrs[key] = value;
+            return false;
+          }
+
+          return value || typeof value === 'string';
+        });
+        if (classes.length) data.staticClass += " ".concat(classes.join(' '));
+      }
+
+      if (props.id) {
+        data.domProps = data.domProps || {};
+        data.domProps.id = props.id;
+      }
+
+      return h(props.tag, data, children);
+    }
+  });
+}
+// CONCATENATED MODULE: ./node_modules/vuetify/lib/components/VGrid/VFlex.js
+
+
+/* harmony default export */ var VFlex = (VGrid('flex'));
 // EXTERNAL MODULE: ./node_modules/vuetify/src/components/VMain/VMain.sass
 var VMain = __webpack_require__("bd0c");
 
@@ -19097,8 +19159,8 @@ var VMain = __webpack_require__("bd0c");
 
 var TheLayout_component = normalizeComponent(
   layout_TheLayoutvue_type_script_lang_js_,
-  TheLayoutvue_type_template_id_f7f86d42_render,
-  TheLayoutvue_type_template_id_f7f86d42_staticRenderFns,
+  TheLayoutvue_type_template_id_4e65a7ca_render,
+  TheLayoutvue_type_template_id_4e65a7ca_staticRenderFns,
   false,
   null,
   null,
@@ -19112,7 +19174,8 @@ var TheLayout_component = normalizeComponent(
 
 
 
-installComponents_default()(TheLayout_component, {VApp: VApp_VApp,VMain: VMain_VMain})
+
+installComponents_default()(TheLayout_component, {VApp: VApp_VApp,VFlex: VFlex,VMain: VMain_VMain})
 
 // CONCATENATED MODULE: ./src/plugins/vuetify.js
 
