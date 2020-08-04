@@ -10,7 +10,6 @@
     <v-tab
       v-for="item in items"
       :key="item[itemPath]"
-      :to="item[itemPath]"
       :ripple="false"
     >{{ item[itemText] }}</v-tab>
   </v-tabs>

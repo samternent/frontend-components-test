@@ -1,11 +1,16 @@
 <template>
   <v-app id="fresh">
     <slot name="header">
-      <the-header/>
+      <the-header
+        :navItems="[
+          { path: '/components', name: 'Components' },
+          { path: '/data-loader', name: 'Data Loader' },
+        ]"
+        :search="false"/>
     </slot>
-    <slot>
-      body
-    </slot>
+    <v-main>
+      <slot/>
+    </v-main>
   </v-app>
 </template>
 
