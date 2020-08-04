@@ -12,6 +12,17 @@
         </a>
       </v-toolbar-title>
 
+      <PageNavigationTabs
+        v-if="$vuetify.breakpoint.mdAndUp"
+        v-model="selectedTab"
+        :items="navItems"
+        :border-bottom="false"
+        item-path="path"
+        item-text="name"
+        slider-color="#ff22b1"
+        tab-color="#fff"
+      />
+
       <v-spacer />
         <v-text-field
           id="searchField"
@@ -29,8 +40,26 @@
 </template>
 
 <script>
+import PageNavigationTabs from './PageNavigationTabs';
+
 export default {
   name: 'TheHeader',
+  components: {
+    PageNavigationTabs,
+  },
+  data: () => ({
+    selectedTab: null,
+  }),
+  props: {
+    navItems: {type: Array, default: () => ([
+      { path: '/home', name: 'Home' },
+      { path: '/projects', name: 'Projects' },
+      { path: '/planning', name: 'Planning' },
+      { path: '/reports', name: 'Reports' },
+      { path: '/calendar', name: 'Calendar' },
+      { path: '/people', name: 'People' }
+    ])},
+  },
 };
 </script>
 <style>
