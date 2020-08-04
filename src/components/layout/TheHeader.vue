@@ -190,17 +190,6 @@
                 <v-list-item-subtitle>View Profile</v-list-item-subtitle>
               </v-list-item-content>
             </v-list-item>
-
-            <v-divider />
-            <v-list-item>
-              <v-list-item-content>
-                <v-list-item-title>
-                  My Status
-                </v-list-item-title>
-                <v-list-item-subtitle>Building something new</v-list-item-subtitle>
-              </v-list-item-content>
-            </v-list-item>
-            <v-divider />
           </v-list>
         </v-menu>
       </template>
@@ -209,7 +198,7 @@
 </template>
 
 <script>
-import PageNavigationTabs from './PageNavigationTabs';
+import PageNavigationTabs from '../navigation/PageNavigationTabs';
 
 export default {
   name: 'TheHeader',
