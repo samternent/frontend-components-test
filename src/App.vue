@@ -1,17 +1,18 @@
 <template>
   <the-layout>
-    <template v-slot:the-sidebar>
+    <the-sidebar>
       <v-treeview :items="items"></v-treeview>
-    </template>
+    </the-sidebar>
   </the-layout>
 </template>
 
 <script>
 import TheLayout from './components/layout/TheLayout';
+import TheSidebar from './components/layout/TheSidebar';
 
 export default {
   name: 'FrontendComponents',
-  components: { TheLayout },
+  components: { TheLayout, TheSidebar },
   data: () => ({
       items: [
         {

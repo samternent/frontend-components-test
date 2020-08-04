@@ -7,9 +7,7 @@
         :hasNotifications="false"/>
     </slot>
     <v-flex row>
-      <the-sidebar>
-        <slot name='the-sidebar'/>
-      </the-sidebar>
+      <slot name='the-sidebar'/>
       <v-main>
         <slot/>
       </v-main>
@@ -18,10 +16,9 @@
 </template>
 
 <script>
-import TheSidebar from '../layout/TheSidebar';
 import TheHeader from './TheHeader';
 export default {
   name: 'FrontendComponents',
-  components: { TheHeader, TheSidebar },
+  components: { TheHeader },
 };
 </script>
