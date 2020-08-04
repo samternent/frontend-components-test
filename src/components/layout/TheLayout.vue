@@ -8,9 +8,7 @@
     </slot>
     <v-flex row>
       <slot name='the-sidebar'/>
-      <v-main>
-        <slot/>
-      </v-main>
+      <slot/>
     </v-flex>
   </v-app>
 </template>
