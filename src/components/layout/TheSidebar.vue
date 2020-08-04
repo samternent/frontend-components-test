@@ -1,12 +1,7 @@
 <template>
-  <v-card>
-    <v-navigation-drawer
-      v-model="drawer"
-      permanent
-    >
-      <slot/>
-    </v-navigation-drawer>
-  </v-card>
+  <section class="sidebar">
+    <slot/>
+  </section>
 </template>
 
 <script>
@@ -23,3 +18,10 @@
     }
   }
 </script>
+<style scoped>
+.sidebar {
+  height: 100%;
+  background-color: #f5f6f7;
+  width: 300px;
+}
+</style>
