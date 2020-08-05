@@ -1,5 +1,5 @@
 {
-  "name": "frontend-components",
+  "name": "sams-frontend-components",
   "version": "0.3.0",
   "main": "./dist/frontend-components.umd.js",
   "scripts": {
