@@ -7,16 +7,21 @@
         :hasNotifications="false"/>
     </slot>
     <v-flex row>
-      <slot name='the-sidebar'/>
-      <slot/>
+      <the-sidebar>
+        <slot name='the-sidebar'/>
+      </the-sidebar>
+      <main>
+        <slot/>
+      </main>
     </v-flex>
   </v-app>
 </template>
 
 <script>
 import TheHeader from './TheHeader';
+import TheSidebar from './TheSidebar';
 export default {
   name: 'FrontendComponents',
-  components: { TheHeader },
+  components: { TheHeader, TheSidebar },
 };
 </script>
