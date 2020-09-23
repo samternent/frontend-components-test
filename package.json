@@ -1,6 +1,6 @@
 {
   "name": "sams-frontend-components",
-  "version": "0.5.0",
+  "version": "0.6.0",
   "main": "./dist/frontend-components.umd.js",
   "scripts": {
     "serve": "vue-cli-service serve",
