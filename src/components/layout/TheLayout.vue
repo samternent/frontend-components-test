@@ -6,14 +6,14 @@
         :hasChat="false"
         :hasNotifications="false"/>
     </slot>
-    <v-flex row>
+    <div class="flex">
       <the-sidebar>
         <slot name='the-sidebar'/>
       </the-sidebar>
-      <main>
+      <main class="flex-1">
         <slot/>
       </main>
-    </v-flex>
+    </div>
   </v-app>
 </template>
 
@@ -25,3 +25,11 @@ export default {
   components: { TheHeader, TheSidebar },
 };
 </script>
+<style lang="scss" scoped>
+.flex {
+  display: flex;
+}
+.flex-1{
+  flex: 1;
+}
+</style>
