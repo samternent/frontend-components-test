@@ -3,17 +3,20 @@
     <the-sidebar>
       <v-treeview :items="items"></v-treeview>
     </the-sidebar>
-    fdsfdsfds
+    <multi-select/>
+    <popover/>
   </the-layout>
 </template>
 
 <script>
 import TheLayout from './components/layout/TheLayout';
 import TheSidebar from './components/layout/TheSidebar';
+import MultiSelect from './components/form/MultiSelect';
+import Popover from './components/form/Popover';
 
 export default {
   name: 'FrontendComponents',
-  components: { TheLayout, TheSidebar },
+  components: { TheLayout, TheSidebar, MultiSelect, Popover },
   data: () => ({
       items: [
         {
