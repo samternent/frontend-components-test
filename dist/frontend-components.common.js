@@ -269,6 +269,13 @@ $({ target: 'Object', stat: true }, {
 
 /***/ }),
 
+/***/ "0bc6":
+/***/ (function(module, exports, __webpack_require__) {
+
+// extracted by mini-css-extract-plugin
+
+/***/ }),
+
 /***/ "0cfb":
 /***/ (function(module, exports, __webpack_require__) {
 
@@ -1628,6 +1635,13 @@ module.exports = !!Object.getOwnPropertySymbols && !fails(function () {
 
 /***/ }),
 
+/***/ "495d":
+/***/ (function(module, exports, __webpack_require__) {
+
+// extracted by mini-css-extract-plugin
+
+/***/ }),
+
 /***/ "498a":
 /***/ (function(module, exports, __webpack_require__) {
 
@@ -1816,6 +1830,23 @@ module.exports = function from(arrayLike /* , mapfn = undefined, thisArg = undef
   result.length = index;
   return result;
 };
+
+
+/***/ }),
+
+/***/ "4ec9":
+/***/ (function(module, exports, __webpack_require__) {
+
+"use strict";
+
+var collection = __webpack_require__("6d61");
+var collectionStrong = __webpack_require__("6566");
+
+// `Map` constructor
+// https://tc39.github.io/ecma262/#sec-map-objects
+module.exports = collection('Map', function (init) {
+  return function Map() { return init(this, arguments.length ? arguments[0] : undefined); };
+}, collectionStrong);
 
 
 /***/ }),
@@ -2255,6 +2286,200 @@ module.exports = {
 
 /***/ }),
 
+/***/ "6566":
+/***/ (function(module, exports, __webpack_require__) {
+
+"use strict";
+
+var defineProperty = __webpack_require__("9bf2").f;
+var create = __webpack_require__("7c73");
+var redefineAll = __webpack_require__("e2cc");
+var bind = __webpack_require__("0366");
+var anInstance = __webpack_require__("19aa");
+var iterate = __webpack_require__("2266");
+var defineIterator = __webpack_require__("7dd0");
+var setSpecies = __webpack_require__("2626");
+var DESCRIPTORS = __webpack_require__("83ab");
+var fastKey = __webpack_require__("f183").fastKey;
+var InternalStateModule = __webpack_require__("69f3");
+
+var setInternalState = InternalStateModule.set;
+var internalStateGetterFor = InternalStateModule.getterFor;
+
+module.exports = {
+  getConstructor: function (wrapper, CONSTRUCTOR_NAME, IS_MAP, ADDER) {
+    var C = wrapper(function (that, iterable) {
+      anInstance(that, C, CONSTRUCTOR_NAME);
+      setInternalState(that, {
+        type: CONSTRUCTOR_NAME,
+        index: create(null),
+        first: undefined,
+        last: undefined,
+        size: 0
+      });
+      if (!DESCRIPTORS) that.size = 0;
+      if (iterable != undefined) iterate(iterable, that[ADDER], that, IS_MAP);
+    });
+
+    var getInternalState = internalStateGetterFor(CONSTRUCTOR_NAME);
+
+    var define = function (that, key, value) {
+      var state = getInternalState(that);
+      var entry = getEntry(that, key);
+      var previous, index;
+      // change existing entry
+      if (entry) {
+        entry.value = value;
+      // create new entry
+      } else {
+        state.last = entry = {
+          index: index = fastKey(key, true),
+          key: key,
+          value: value,
+          previous: previous = state.last,
+          next: undefined,
+          removed: false
+        };
+        if (!state.first) state.first = entry;
+        if (previous) previous.next = entry;
+        if (DESCRIPTORS) state.size++;
+        else that.size++;
+        // add to index
+        if (index !== 'F') state.index[index] = entry;
+      } return that;
+    };
+
+    var getEntry = function (that, key) {
+      var state = getInternalState(that);
+      // fast case
+      var index = fastKey(key);
+      var entry;
+      if (index !== 'F') return state.index[index];
+      // frozen object case
+      for (entry = state.first; entry; entry = entry.next) {
+        if (entry.key == key) return entry;
+      }
+    };
+
+    redefineAll(C.prototype, {
+      // 23.1.3.1 Map.prototype.clear()
+      // 23.2.3.2 Set.prototype.clear()
+      clear: function clear() {
+        var that = this;
+        var state = getInternalState(that);
+        var data = state.index;
+        var entry = state.first;
+        while (entry) {
+          entry.removed = true;
+          if (entry.previous) entry.previous = entry.previous.next = undefined;
+          delete data[entry.index];
+          entry = entry.next;
+        }
+        state.first = state.last = undefined;
+        if (DESCRIPTORS) state.size = 0;
+        else that.size = 0;
+      },
+      // 23.1.3.3 Map.prototype.delete(key)
+      // 23.2.3.4 Set.prototype.delete(value)
+      'delete': function (key) {
+        var that = this;
+        var state = getInternalState(that);
+        var entry = getEntry(that, key);
+        if (entry) {
+          var next = entry.next;
+          var prev = entry.previous;
+          delete state.index[entry.index];
+          entry.removed = true;
+          if (prev) prev.next = next;
+          if (next) next.previous = prev;
+          if (state.first == entry) state.first = next;
+          if (state.last == entry) state.last = prev;
+          if (DESCRIPTORS) state.size--;
+          else that.size--;
+        } return !!entry;
+      },
+      // 23.2.3.6 Set.prototype.forEach(callbackfn, thisArg = undefined)
+      // 23.1.3.5 Map.prototype.forEach(callbackfn, thisArg = undefined)
+      forEach: function forEach(callbackfn /* , that = undefined */) {
+        var state = getInternalState(this);
+        var boundFunction = bind(callbackfn, arguments.length > 1 ? arguments[1] : undefined, 3);
+        var entry;
+        while (entry = entry ? entry.next : state.first) {
+          boundFunction(entry.value, entry.key, this);
+          // revert to the last existing entry
+          while (entry && entry.removed) entry = entry.previous;
+        }
+      },
+      // 23.1.3.7 Map.prototype.has(key)
+      // 23.2.3.7 Set.prototype.has(value)
+      has: function has(key) {
+        return !!getEntry(this, key);
+      }
+    });
+
+    redefineAll(C.prototype, IS_MAP ? {
+      // 23.1.3.6 Map.prototype.get(key)
+      get: function get(key) {
+        var entry = getEntry(this, key);
+        return entry && entry.value;
+      },
+      // 23.1.3.9 Map.prototype.set(key, value)
+      set: function set(key, value) {
+        return define(this, key === 0 ? 0 : key, value);
+      }
+    } : {
+      // 23.2.3.1 Set.prototype.add(value)
+      add: function add(value) {
+        return define(this, value = value === 0 ? 0 : value, value);
+      }
+    });
+    if (DESCRIPTORS) defineProperty(C.prototype, 'size', {
+      get: function () {
+        return getInternalState(this).size;
+      }
+    });
+    return C;
+  },
+  setStrong: function (C, CONSTRUCTOR_NAME, IS_MAP) {
+    var ITERATOR_NAME = CONSTRUCTOR_NAME + ' Iterator';
+    var getInternalCollectionState = internalStateGetterFor(CONSTRUCTOR_NAME);
+    var getInternalIteratorState = internalStateGetterFor(ITERATOR_NAME);
+    // add .keys, .values, .entries, [@@iterator]
+    // 23.1.3.4, 23.1.3.8, 23.1.3.11, 23.1.3.12, 23.2.3.5, 23.2.3.8, 23.2.3.10, 23.2.3.11
+    defineIterator(C, CONSTRUCTOR_NAME, function (iterated, kind) {
+      setInternalState(this, {
+        type: ITERATOR_NAME,
+        target: iterated,
+        state: getInternalCollectionState(iterated),
+        kind: kind,
+        last: undefined
+      });
+    }, function () {
+      var state = getInternalIteratorState(this);
+      var kind = state.kind;
+      var entry = state.last;
+      // revert to the last existing entry
+      while (entry && entry.removed) entry = entry.previous;
+      // get next entry
+      if (!state.target || !(state.last = entry = entry ? entry.next : state.state.first)) {
+        // or finish the iteration
+        state.target = undefined;
+        return { value: undefined, done: true };
+      }
+      // return step by kind
+      if (kind == 'keys') return { value: entry.key, done: false };
+      if (kind == 'values') return { value: entry.value, done: false };
+      return { value: [entry.key, entry.value], done: false };
+    }, IS_MAP ? 'entries' : 'values', !IS_MAP, true);
+
+    // add [@@species], 23.1.2.2, 23.2.2.2
+    setSpecies(CONSTRUCTOR_NAME);
+  }
+};
+
+
+/***/ }),
+
 /***/ "65f0":
 /***/ (function(module, exports, __webpack_require__) {
 
@@ -2279,6 +2504,13 @@ module.exports = function (originalArray, length) {
   } return new (C === undefined ? Array : C)(length === 0 ? 0 : length);
 };
 
+
+/***/ }),
+
+/***/ "68dd":
+/***/ (function(module, exports, __webpack_require__) {
+
+// extracted by mini-css-extract-plugin
 
 /***/ }),
 
@@ -2345,6 +2577,113 @@ module.exports = {
   has: has,
   enforce: enforce,
   getterFor: getterFor
+};
+
+
+/***/ }),
+
+/***/ "6d61":
+/***/ (function(module, exports, __webpack_require__) {
+
+"use strict";
+
+var $ = __webpack_require__("23e7");
+var global = __webpack_require__("da84");
+var isForced = __webpack_require__("94ca");
+var redefine = __webpack_require__("6eeb");
+var InternalMetadataModule = __webpack_require__("f183");
+var iterate = __webpack_require__("2266");
+var anInstance = __webpack_require__("19aa");
+var isObject = __webpack_require__("861d");
+var fails = __webpack_require__("d039");
+var checkCorrectnessOfIteration = __webpack_require__("1c7e");
+var setToStringTag = __webpack_require__("d44e");
+var inheritIfRequired = __webpack_require__("7156");
+
+module.exports = function (CONSTRUCTOR_NAME, wrapper, common) {
+  var IS_MAP = CONSTRUCTOR_NAME.indexOf('Map') !== -1;
+  var IS_WEAK = CONSTRUCTOR_NAME.indexOf('Weak') !== -1;
+  var ADDER = IS_MAP ? 'set' : 'add';
+  var NativeConstructor = global[CONSTRUCTOR_NAME];
+  var NativePrototype = NativeConstructor && NativeConstructor.prototype;
+  var Constructor = NativeConstructor;
+  var exported = {};
+
+  var fixMethod = function (KEY) {
+    var nativeMethod = NativePrototype[KEY];
+    redefine(NativePrototype, KEY,
+      KEY == 'add' ? function add(value) {
+        nativeMethod.call(this, value === 0 ? 0 : value);
+        return this;
+      } : KEY == 'delete' ? function (key) {
+        return IS_WEAK && !isObject(key) ? false : nativeMethod.call(this, key === 0 ? 0 : key);
+      } : KEY == 'get' ? function get(key) {
+        return IS_WEAK && !isObject(key) ? undefined : nativeMethod.call(this, key === 0 ? 0 : key);
+      } : KEY == 'has' ? function has(key) {
+        return IS_WEAK && !isObject(key) ? false : nativeMethod.call(this, key === 0 ? 0 : key);
+      } : function set(key, value) {
+        nativeMethod.call(this, key === 0 ? 0 : key, value);
+        return this;
+      }
+    );
+  };
+
+  // eslint-disable-next-line max-len
+  if (isForced(CONSTRUCTOR_NAME, typeof NativeConstructor != 'function' || !(IS_WEAK || NativePrototype.forEach && !fails(function () {
+    new NativeConstructor().entries().next();
+  })))) {
+    // create collection constructor
+    Constructor = common.getConstructor(wrapper, CONSTRUCTOR_NAME, IS_MAP, ADDER);
+    InternalMetadataModule.REQUIRED = true;
+  } else if (isForced(CONSTRUCTOR_NAME, true)) {
+    var instance = new Constructor();
+    // early implementations not supports chaining
+    var HASNT_CHAINING = instance[ADDER](IS_WEAK ? {} : -0, 1) != instance;
+    // V8 ~ Chromium 40- weak-collections throws on primitives, but should return false
+    var THROWS_ON_PRIMITIVES = fails(function () { instance.has(1); });
+    // most early implementations doesn't supports iterables, most modern - not close it correctly
+    // eslint-disable-next-line no-new
+    var ACCEPT_ITERABLES = checkCorrectnessOfIteration(function (iterable) { new NativeConstructor(iterable); });
+    // for early implementations -0 and +0 not the same
+    var BUGGY_ZERO = !IS_WEAK && fails(function () {
+      // V8 ~ Chromium 42- fails only with 5+ elements
+      var $instance = new NativeConstructor();
+      var index = 5;
+      while (index--) $instance[ADDER](index, index);
+      return !$instance.has(-0);
+    });
+
+    if (!ACCEPT_ITERABLES) {
+      Constructor = wrapper(function (dummy, iterable) {
+        anInstance(dummy, Constructor, CONSTRUCTOR_NAME);
+        var that = inheritIfRequired(new NativeConstructor(), dummy, Constructor);
+        if (iterable != undefined) iterate(iterable, that[ADDER], that, IS_MAP);
+        return that;
+      });
+      Constructor.prototype = NativePrototype;
+      NativePrototype.constructor = Constructor;
+    }
+
+    if (THROWS_ON_PRIMITIVES || BUGGY_ZERO) {
+      fixMethod('delete');
+      fixMethod('has');
+      IS_MAP && fixMethod('get');
+    }
+
+    if (BUGGY_ZERO || HASNT_CHAINING) fixMethod(ADDER);
+
+    // weak collections should not contains .clear method
+    if (IS_WEAK && NativePrototype.clear) delete NativePrototype.clear;
+  }
+
+  exported[CONSTRUCTOR_NAME] = Constructor;
+  $({ global: true, forced: Constructor != NativeConstructor }, exported);
+
+  setToStringTag(Constructor, CONSTRUCTOR_NAME);
+
+  if (!IS_WEAK) common.setStrong(Constructor, CONSTRUCTOR_NAME, IS_MAP);
+
+  return Constructor;
 };
 
 
@@ -2823,6 +3162,48 @@ module.exports = function (object, key, value) {
 
 /***/ }),
 
+/***/ "841c":
+/***/ (function(module, exports, __webpack_require__) {
+
+"use strict";
+
+var fixRegExpWellKnownSymbolLogic = __webpack_require__("d784");
+var anObject = __webpack_require__("825a");
+var requireObjectCoercible = __webpack_require__("1d80");
+var sameValue = __webpack_require__("129f");
+var regExpExec = __webpack_require__("14c3");
+
+// @@search logic
+fixRegExpWellKnownSymbolLogic('search', 1, function (SEARCH, nativeSearch, maybeCallNative) {
+  return [
+    // `String.prototype.search` method
+    // https://tc39.github.io/ecma262/#sec-string.prototype.search
+    function search(regexp) {
+      var O = requireObjectCoercible(this);
+      var searcher = regexp == undefined ? undefined : regexp[SEARCH];
+      return searcher !== undefined ? searcher.call(regexp, O) : new RegExp(regexp)[SEARCH](String(O));
+    },
+    // `RegExp.prototype[@@search]` method
+    // https://tc39.github.io/ecma262/#sec-regexp.prototype-@@search
+    function (regexp) {
+      var res = maybeCallNative(nativeSearch, regexp, this);
+      if (res.done) return res.value;
+
+      var rx = anObject(regexp);
+      var S = String(this);
+
+      var previousLastIndex = rx.lastIndex;
+      if (!sameValue(previousLastIndex, 0)) rx.lastIndex = 0;
+      var result = regExpExec(rx, S);
+      if (!sameValue(rx.lastIndex, previousLastIndex)) rx.lastIndex = previousLastIndex;
+      return result === null ? -1 : result.index;
+    }
+  ];
+});
+
+
+/***/ }),
+
 /***/ "857a":
 /***/ (function(module, exports, __webpack_require__) {
 
@@ -2986,7 +3367,21 @@ module.exports = function (S, index, unicode) {
 
 /***/ }),
 
+/***/ "8adc":
+/***/ (function(module, exports, __webpack_require__) {
+
+// extracted by mini-css-extract-plugin
+
+/***/ }),
+
 /***/ "8b0d":
+/***/ (function(module, exports, __webpack_require__) {
+
+// extracted by mini-css-extract-plugin
+
+/***/ }),
+
+/***/ "8b37":
 /***/ (function(module, exports, __webpack_require__) {
 
 // extracted by mini-css-extract-plugin
@@ -2997,6 +3392,13 @@ module.exports = function (S, index, unicode) {
 /***/ (function(module, exports) {
 
 module.exports = require("vue");
+
+/***/ }),
+
+/***/ "8ce9":
+/***/ (function(module, exports, __webpack_require__) {
+
+// extracted by mini-css-extract-plugin
 
 /***/ }),
 
@@ -3048,6 +3450,13 @@ module.exports = DESCRIPTORS ? function (object, key, value) {
   return object;
 };
 
+
+/***/ }),
+
+/***/ "91f4":
+/***/ (function(module, exports, __webpack_require__) {
+
+// extracted by mini-css-extract-plugin
 
 /***/ }),
 
@@ -4888,6 +5297,13 @@ module.exports = function (key, value) {
 
 /***/ }),
 
+/***/ "cf36":
+/***/ (function(module, exports, __webpack_require__) {
+
+// extracted by mini-css-extract-plugin
+
+/***/ }),
+
 /***/ "d012":
 /***/ (function(module, exports) {
 
@@ -6226,6 +6642,13 @@ module.exports = function (key) {
 
 /***/ }),
 
+/***/ "f823":
+/***/ (function(module, exports, __webpack_require__) {
+
+// extracted by mini-css-extract-plugin
+
+/***/ }),
+
 /***/ "fae3":
 /***/ (function(module, __webpack_exports__, __webpack_require__) {
 
@@ -6238,6 +6661,7 @@ __webpack_require__.d(__webpack_exports__, "TheHeader", function() { return /* r
 __webpack_require__.d(__webpack_exports__, "TheLayout", function() { return /* reexport */ TheLayout; });
 __webpack_require__.d(__webpack_exports__, "TheSidebar", function() { return /* reexport */ TheSidebar; });
 __webpack_require__.d(__webpack_exports__, "TPageNavigationTabs", function() { return /* reexport */ PageNavigationTabs; });
+__webpack_require__.d(__webpack_exports__, "VDataTable", function() { return /* reexport */ VDataTable_VDataTable; });
 __webpack_require__.d(__webpack_exports__, "TButton", function() { return /* reexport */ Button; });
 __webpack_require__.d(__webpack_exports__, "teamwork", function() { return /* reexport */ teamwork; });
 
@@ -6282,7 +6706,7 @@ if (typeof window !== 'undefined') {
 // Indicate to webpack that this file can be concatenated
 /* harmony default export */ var setPublicPath = (null);
 
-// CONCATENATED MODULE: ./node_modules/cache-loader/dist/cjs.js?{"cacheDirectory":"node_modules/.cache/vue-loader","cacheIdentifier":"b1189b60-vue-loader-template"}!./node_modules/vue-loader/lib/loaders/templateLoader.js??vue-loader-options!./node_modules/cache-loader/dist/cjs.js??ref--0-0!./node_modules/vue-loader/lib??vue-loader-options!./src/components/layout/TheHeader.vue?vue&type=template&id=9c8c1aa8&
+// CONCATENATED MODULE: ./node_modules/cache-loader/dist/cjs.js?{"cacheDirectory":"node_modules/.cache/vue-loader","cacheIdentifier":"60263d6e-vue-loader-template"}!./node_modules/vue-loader/lib/loaders/templateLoader.js??vue-loader-options!./node_modules/cache-loader/dist/cjs.js??ref--0-0!./node_modules/vue-loader/lib??vue-loader-options!./src/components/layout/TheHeader.vue?vue&type=template&id=9c8c1aa8&
 var TheHeadervue_type_template_id_9c8c1aa8_render = function () {var _vm=this;var _h=_vm.$createElement;var _c=_vm._self._c||_h;return _c('header',[_c('v-app-bar',{attrs:{"color":"#181631","dense":"","dark":"","flat":""}},[_c('v-toolbar-title',{staticClass:"tw-app__top-navbar__title"},[_c('a',{attrs:{"href":"/#"}},[_c('v-img',{attrs:{"src":__webpack_require__("4f67"),"alt":"Teamwork","width":"20"}})],1)]),(_vm.$vuetify.breakpoint.mdAndUp)?_c('PageNavigationTabs',{attrs:{"items":_vm.navItems,"border-bottom":false,"item-path":"path","item-text":"name","slider-color":"#ff22b1","tab-color":"#fff"},model:{value:(_vm.selectedTab),callback:function ($$v) {_vm.selectedTab=$$v},expression:"selectedTab"}}):_vm._e(),_c('v-spacer'),(_vm.hasSearch)?_c('v-text-field',{staticClass:"mr-5",attrs:{"id":"searchField","flat":"","solo-inverted":"","dense":"","hide-details":"","clearable":"","prepend-inner-icon":"mdi-magnify","label":"Search"}}):_vm._e(),(_vm.hasMenu)?_c('v-menu',{attrs:{"transition":"scroll-x-transition","offset-y":""},scopedSlots:_vm._u([{key:"activator",fn:function(ref){
 var on = ref.on;
 return [_c('v-btn',_vm._g({staticClass:"mr-3",attrs:{"small":"","icon":""}},on),[_c('v-icon',{attrs:{"size":"20px"}},[_vm._v("mdi-plus")])],1)]}}],null,false,922157974)},[_vm._v("> ")]):_vm._e(),(_vm.hasChat)?_c('v-btn',{staticClass:"mr-3",attrs:{"small":"","icon":""}},[_c('v-icon',{attrs:{"size":"20px"}},[_vm._v("mdi-comment-processing")])],1):_vm._e(),(_vm.hasAppSwitcher)?_c('v-btn',{staticClass:"mr-3",attrs:{"small":"","icon":""}},[_c('v-icon',{attrs:{"size":"20px"}},[_vm._v("mdi-apps")])],1):_vm._e(),(_vm.hasNotifications)?_c('v-badge',{attrs:{"dot":"","content":"12","color":"green","overlap":"","offset-x":"22","offset-y":"22"}},[_c('v-btn',{staticClass:"mr-3",attrs:{"small":"","icon":""}},[_c('v-icon',{attrs:{"size":"20px"}},[_vm._v("mdi-bell")])],1)],1):_vm._e(),[_c('v-menu',{attrs:{"transition":"scroll-x-transition","offset-y":""},scopedSlots:_vm._u([{key:"activator",fn:function(ref){
@@ -6293,7 +6717,7 @@ var staticRenderFns = []
 
 // CONCATENATED MODULE: ./src/components/layout/TheHeader.vue?vue&type=template&id=9c8c1aa8&
 
-// CONCATENATED MODULE: ./node_modules/cache-loader/dist/cjs.js?{"cacheDirectory":"node_modules/.cache/vue-loader","cacheIdentifier":"b1189b60-vue-loader-template"}!./node_modules/vue-loader/lib/loaders/templateLoader.js??vue-loader-options!./node_modules/cache-loader/dist/cjs.js??ref--0-0!./node_modules/vue-loader/lib??vue-loader-options!./src/components/navigation/PageNavigationTabs.vue?vue&type=template&id=c25205e6&scoped=true&
+// CONCATENATED MODULE: ./node_modules/cache-loader/dist/cjs.js?{"cacheDirectory":"node_modules/.cache/vue-loader","cacheIdentifier":"60263d6e-vue-loader-template"}!./node_modules/vue-loader/lib/loaders/templateLoader.js??vue-loader-options!./node_modules/cache-loader/dist/cjs.js??ref--0-0!./node_modules/vue-loader/lib??vue-loader-options!./src/components/navigation/PageNavigationTabs.vue?vue&type=template&id=c25205e6&scoped=true&
 var PageNavigationTabsvue_type_template_id_c25205e6_scoped_true_render = function () {var _vm=this;var _h=_vm.$createElement;var _c=_vm._self._c||_h;return _c('v-tabs',{staticClass:"tw-tabs__page",class:{ 'tw-tabs__page-border--bottom': _vm.borderBottom  },attrs:{"value":_vm.activeTab,"color":_vm.tabColor},on:{"change":function($event){return _vm.$emit('input', $event)}}},[_c('v-tabs-slider',{attrs:{"color":_vm.sliderColor}}),_vm._l((_vm.items),function(item){return _c('v-tab',{key:item[_vm.itemPath],attrs:{"to":item[_vm.itemPath],"ripple":false}},[_vm._v(_vm._s(item[_vm.itemText]))])})],2)}
 var PageNavigationTabsvue_type_template_id_c25205e6_scoped_true_staticRenderFns = []
 
@@ -7333,7 +7757,7 @@ function remapInternalIcon(vm, iconName) {
 
   return getObjectValueByPath(vm, iconPath, iconName);
 }
-function keys(o) {
+function helpers_keys(o) {
   return Object.keys(o);
 }
 /**
@@ -7391,7 +7815,7 @@ function groupItems(items, groupBy, groupDesc) {
 function wrapInArray(v) {
   return v != null ? Array.isArray(v) ? v : [v] : [];
 }
-function sortItems(items, sortBy, sortDesc, locale, customSorters) {
+function helpers_sortItems(items, sortBy, sortDesc, locale, customSorters) {
   if (sortBy === null || !sortBy.length) return items;
   var stringCollator = new Intl.Collator(locale, {
     sensitivity: 'accent',
@@ -10464,7 +10888,7 @@ var VIcon_VIcon = mixins(binds_attrs, colorable, sizeable, themeable
         large: this.large,
         xLarge: this.xLarge
       };
-      var explicitSize = keys(sizes).find(function (key) {
+      var explicitSize = helpers_keys(sizes).find(function (key) {
         return sizes[key];
       });
       return explicitSize && SIZE_MAP[explicitSize] || convertToUnit(this.size);
@@ -11471,7 +11895,7 @@ function touch_inserted(el, binding, vnode) {
   var handlers = createHandlers(binding.value);
   target._touchHandlers = Object(target._touchHandlers);
   target._touchHandlers[vnode.context._uid] = handlers;
-  keys(handlers).forEach(function (eventName) {
+  helpers_keys(handlers).forEach(function (eventName) {
     target.addEventListener(eventName, handlers[eventName], options);
   });
 }
@@ -11480,7 +11904,7 @@ function touch_unbind(el, binding, vnode) {
   var target = binding.value.parent ? el.parentElement : el;
   if (!target || !target._touchHandlers) return;
   var handlers = target._touchHandlers[vnode.context._uid];
-  keys(handlers).forEach(function (eventName) {
+  helpers_keys(handlers).forEach(function (eventName) {
     target.removeEventListener(eventName, handlers[eventName]);
   });
   delete target._touchHandlers[vnode.context._uid];
@@ -18118,7 +18542,7 @@ var TheHeader_component = normalizeComponent(
 
 installComponents_default()(TheHeader_component, {VAppBar: VAppBar_VAppBar,VAvatar: VAvatar_VAvatar,VBadge: VBadge_VBadge,VBtn: VBtn_VBtn,VIcon: components_VIcon_VIcon,VImg: VImg_VImg,VList: VList_VList,VListItem: VList_VListItem,VListItemAvatar: VListItemAvatar,VListItemContent: VListItemContent,VListItemSubtitle: VListItemSubtitle,VListItemTitle: VListItemTitle,VMenu: VMenu_VMenu,VSpacer: VSpacer,VTextField: VTextField_VTextField,VToolbarTitle: VToolbarTitle})
 
-// CONCATENATED MODULE: ./node_modules/cache-loader/dist/cjs.js?{"cacheDirectory":"node_modules/.cache/vue-loader","cacheIdentifier":"b1189b60-vue-loader-template"}!./node_modules/vue-loader/lib/loaders/templateLoader.js??vue-loader-options!./node_modules/cache-loader/dist/cjs.js??ref--0-0!./node_modules/vue-loader/lib??vue-loader-options!./src/components/layout/TheLayout.vue?vue&type=template&id=b6c6e0e2&
+// CONCATENATED MODULE: ./node_modules/cache-loader/dist/cjs.js?{"cacheDirectory":"node_modules/.cache/vue-loader","cacheIdentifier":"60263d6e-vue-loader-template"}!./node_modules/vue-loader/lib/loaders/templateLoader.js??vue-loader-options!./node_modules/cache-loader/dist/cjs.js??ref--0-0!./node_modules/vue-loader/lib??vue-loader-options!./src/components/layout/TheLayout.vue?vue&type=template&id=b6c6e0e2&
 var TheLayoutvue_type_template_id_b6c6e0e2_render = function () {var _vm=this;var _h=_vm.$createElement;var _c=_vm._self._c||_h;return _c('v-app',{attrs:{"id":"fresh"}},[_vm._t("the-header",[_c('the-header',{attrs:{"hasSearch":true,"hasChat":false,"hasNotifications":false}})]),_c('v-flex',{attrs:{"row":""}},[_vm._t("the-sidebar"),_vm._t("default")],2)],2)}
 var TheLayoutvue_type_template_id_b6c6e0e2_staticRenderFns = []
 
@@ -18296,7 +18720,7 @@ var TheLayout_component = normalizeComponent(
 
 installComponents_default()(TheLayout_component, {VApp: VApp_VApp,VFlex: VFlex})
 
-// CONCATENATED MODULE: ./node_modules/cache-loader/dist/cjs.js?{"cacheDirectory":"node_modules/.cache/vue-loader","cacheIdentifier":"b1189b60-vue-loader-template"}!./node_modules/vue-loader/lib/loaders/templateLoader.js??vue-loader-options!./node_modules/cache-loader/dist/cjs.js??ref--0-0!./node_modules/vue-loader/lib??vue-loader-options!./src/components/layout/TheSidebar.vue?vue&type=template&id=98c962ba&scoped=true&
+// CONCATENATED MODULE: ./node_modules/cache-loader/dist/cjs.js?{"cacheDirectory":"node_modules/.cache/vue-loader","cacheIdentifier":"60263d6e-vue-loader-template"}!./node_modules/vue-loader/lib/loaders/templateLoader.js??vue-loader-options!./node_modules/cache-loader/dist/cjs.js??ref--0-0!./node_modules/vue-loader/lib??vue-loader-options!./src/components/layout/TheSidebar.vue?vue&type=template&id=98c962ba&scoped=true&
 var TheSidebarvue_type_template_id_98c962ba_scoped_true_render = function () {var _vm=this;var _h=_vm.$createElement;var _c=_vm._self._c||_h;return _c('section',{staticClass:"sidebar"},[_vm._t("default")],2)}
 var TheSidebarvue_type_template_id_98c962ba_scoped_true_staticRenderFns = []
 
@@ -18337,7 +18761,3665 @@ var TheSidebar_component = normalizeComponent(
 )
 
 /* harmony default export */ var TheSidebar = (TheSidebar_component.exports);
-// CONCATENATED MODULE: ./node_modules/cache-loader/dist/cjs.js?{"cacheDirectory":"node_modules/.cache/vue-loader","cacheIdentifier":"b1189b60-vue-loader-template"}!./node_modules/vue-loader/lib/loaders/templateLoader.js??vue-loader-options!./node_modules/cache-loader/dist/cjs.js??ref--0-0!./node_modules/vue-loader/lib??vue-loader-options!./src/components/form/Button.vue?vue&type=template&id=7ba61cec&
+// EXTERNAL MODULE: ./node_modules/vuetify/src/components/VDataTable/VDataTable.sass
+var VDataTable = __webpack_require__("91f4");
+
+// EXTERNAL MODULE: ./node_modules/core-js/modules/es.string.search.js
+var es_string_search = __webpack_require__("841c");
+
+// CONCATENATED MODULE: ./node_modules/vuetify/lib/components/VData/VData.js
+
+
+
+
+
+
+
+
+
+
+
+// Helpers
+
+
+/* harmony default export */ var VData = (external_commonjs_vue_commonjs2_vue_root_Vue_default.a.extend({
+  name: 'v-data',
+  inheritAttrs: false,
+  props: {
+    items: {
+      type: Array,
+      default: function _default() {
+        return [];
+      }
+    },
+    options: {
+      type: Object,
+      default: function _default() {
+        return {};
+      }
+    },
+    sortBy: {
+      type: [String, Array],
+      default: function _default() {
+        return [];
+      }
+    },
+    sortDesc: {
+      type: [Boolean, Array],
+      default: function _default() {
+        return [];
+      }
+    },
+    customSort: {
+      type: Function,
+      default: helpers_sortItems
+    },
+    mustSort: Boolean,
+    multiSort: Boolean,
+    page: {
+      type: Number,
+      default: 1
+    },
+    itemsPerPage: {
+      type: Number,
+      default: 10
+    },
+    groupBy: {
+      type: [String, Array],
+      default: function _default() {
+        return [];
+      }
+    },
+    groupDesc: {
+      type: [Boolean, Array],
+      default: function _default() {
+        return [];
+      }
+    },
+    customGroup: {
+      type: Function,
+      default: groupItems
+    },
+    locale: {
+      type: String,
+      default: 'en-US'
+    },
+    disableSort: Boolean,
+    disablePagination: Boolean,
+    disableFiltering: Boolean,
+    search: String,
+    customFilter: {
+      type: Function,
+      default: searchItems
+    },
+    serverItemsLength: {
+      type: Number,
+      default: -1
+    }
+  },
+  data: function data() {
+    var internalOptions = {
+      page: this.page,
+      itemsPerPage: this.itemsPerPage,
+      sortBy: wrapInArray(this.sortBy),
+      sortDesc: wrapInArray(this.sortDesc),
+      groupBy: wrapInArray(this.groupBy),
+      groupDesc: wrapInArray(this.groupDesc),
+      mustSort: this.mustSort,
+      multiSort: this.multiSort
+    };
+
+    if (this.options) {
+      internalOptions = Object.assign(internalOptions, this.options);
+    }
+
+    var _internalOptions = internalOptions,
+        sortBy = _internalOptions.sortBy,
+        sortDesc = _internalOptions.sortDesc,
+        groupBy = _internalOptions.groupBy,
+        groupDesc = _internalOptions.groupDesc;
+    var sortDiff = sortBy.length - sortDesc.length;
+    var groupDiff = groupBy.length - groupDesc.length;
+
+    if (sortDiff > 0) {
+      var _internalOptions$sort;
+
+      (_internalOptions$sort = internalOptions.sortDesc).push.apply(_internalOptions$sort, _toConsumableArray(fillArray(sortDiff, false)));
+    }
+
+    if (groupDiff > 0) {
+      var _internalOptions$grou;
+
+      (_internalOptions$grou = internalOptions.groupDesc).push.apply(_internalOptions$grou, _toConsumableArray(fillArray(groupDiff, false)));
+    }
+
+    return {
+      internalOptions: internalOptions
+    };
+  },
+  computed: {
+    itemsLength: function itemsLength() {
+      return this.serverItemsLength >= 0 ? this.serverItemsLength : this.filteredItems.length;
+    },
+    pageCount: function pageCount() {
+      return this.internalOptions.itemsPerPage <= 0 ? 1 : Math.ceil(this.itemsLength / this.internalOptions.itemsPerPage);
+    },
+    pageStart: function pageStart() {
+      if (this.internalOptions.itemsPerPage === -1 || !this.items.length) return 0;
+      return (this.internalOptions.page - 1) * this.internalOptions.itemsPerPage;
+    },
+    pageStop: function pageStop() {
+      if (this.internalOptions.itemsPerPage === -1) return this.itemsLength;
+      if (!this.items.length) return 0;
+      return Math.min(this.itemsLength, this.internalOptions.page * this.internalOptions.itemsPerPage);
+    },
+    isGrouped: function isGrouped() {
+      return !!this.internalOptions.groupBy.length;
+    },
+    pagination: function pagination() {
+      return {
+        page: this.internalOptions.page,
+        itemsPerPage: this.internalOptions.itemsPerPage,
+        pageStart: this.pageStart,
+        pageStop: this.pageStop,
+        pageCount: this.pageCount,
+        itemsLength: this.itemsLength
+      };
+    },
+    filteredItems: function filteredItems() {
+      var items = this.items.slice();
+
+      if (!this.disableFiltering && this.serverItemsLength <= 0) {
+        items = this.customFilter(items, this.search);
+      }
+
+      return items;
+    },
+    computedItems: function computedItems() {
+      var items = this.filteredItems.slice();
+
+      if (!this.disableSort && this.serverItemsLength <= 0) {
+        items = this.sortItems(items);
+      }
+
+      if (!this.disablePagination && this.serverItemsLength <= 0) {
+        items = this.paginateItems(items);
+      }
+
+      return items;
+    },
+    groupedItems: function groupedItems() {
+      return this.isGrouped ? this.groupItems(this.computedItems) : null;
+    },
+    scopedProps: function scopedProps() {
+      var props = {
+        sort: this.sort,
+        sortArray: this.sortArray,
+        group: this.group,
+        items: this.computedItems,
+        options: this.internalOptions,
+        updateOptions: this.updateOptions,
+        pagination: this.pagination,
+        groupedItems: this.groupedItems,
+        originalItemsLength: this.items.length
+      };
+      return props;
+    },
+    computedOptions: function computedOptions() {
+      return _objectSpread2({}, this.options);
+    }
+  },
+  watch: {
+    computedOptions: {
+      handler: function handler(options, old) {
+        if (deepEqual(options, old)) return;
+        this.updateOptions(options);
+      },
+      deep: true,
+      immediate: true
+    },
+    internalOptions: {
+      handler: function handler(options, old) {
+        if (deepEqual(options, old)) return;
+        this.$emit('update:options', options);
+      },
+      deep: true,
+      immediate: true
+    },
+    page: function page(_page) {
+      this.updateOptions({
+        page: _page
+      });
+    },
+    'internalOptions.page': function internalOptionsPage(page) {
+      this.$emit('update:page', page);
+    },
+    itemsPerPage: function itemsPerPage(_itemsPerPage) {
+      this.updateOptions({
+        itemsPerPage: _itemsPerPage
+      });
+    },
+    'internalOptions.itemsPerPage': function internalOptionsItemsPerPage(itemsPerPage) {
+      this.$emit('update:items-per-page', itemsPerPage);
+    },
+    sortBy: function sortBy(_sortBy) {
+      this.updateOptions({
+        sortBy: wrapInArray(_sortBy)
+      });
+    },
+    'internalOptions.sortBy': function internalOptionsSortBy(sortBy, old) {
+      !deepEqual(sortBy, old) && this.$emit('update:sort-by', Array.isArray(this.sortBy) ? sortBy : sortBy[0]);
+    },
+    sortDesc: function sortDesc(_sortDesc) {
+      this.updateOptions({
+        sortDesc: wrapInArray(_sortDesc)
+      });
+    },
+    'internalOptions.sortDesc': function internalOptionsSortDesc(sortDesc, old) {
+      !deepEqual(sortDesc, old) && this.$emit('update:sort-desc', Array.isArray(this.sortDesc) ? sortDesc : sortDesc[0]);
+    },
+    groupBy: function groupBy(_groupBy) {
+      this.updateOptions({
+        groupBy: wrapInArray(_groupBy)
+      });
+    },
+    'internalOptions.groupBy': function internalOptionsGroupBy(groupBy, old) {
+      !deepEqual(groupBy, old) && this.$emit('update:group-by', Array.isArray(this.groupBy) ? groupBy : groupBy[0]);
+    },
+    groupDesc: function groupDesc(_groupDesc) {
+      this.updateOptions({
+        groupDesc: wrapInArray(_groupDesc)
+      });
+    },
+    'internalOptions.groupDesc': function internalOptionsGroupDesc(groupDesc, old) {
+      !deepEqual(groupDesc, old) && this.$emit('update:group-desc', Array.isArray(this.groupDesc) ? groupDesc : groupDesc[0]);
+    },
+    multiSort: function multiSort(_multiSort) {
+      this.updateOptions({
+        multiSort: _multiSort
+      });
+    },
+    'internalOptions.multiSort': function internalOptionsMultiSort(multiSort) {
+      this.$emit('update:multi-sort', multiSort);
+    },
+    mustSort: function mustSort(_mustSort) {
+      this.updateOptions({
+        mustSort: _mustSort
+      });
+    },
+    'internalOptions.mustSort': function internalOptionsMustSort(mustSort) {
+      this.$emit('update:must-sort', mustSort);
+    },
+    pageCount: {
+      handler: function handler(pageCount) {
+        this.$emit('page-count', pageCount);
+      },
+      immediate: true
+    },
+    computedItems: {
+      handler: function handler(computedItems) {
+        this.$emit('current-items', computedItems);
+      },
+      immediate: true
+    },
+    pagination: {
+      handler: function handler(pagination, old) {
+        if (deepEqual(pagination, old)) return;
+        this.$emit('pagination', this.pagination);
+      },
+      immediate: true
+    }
+  },
+  methods: {
+    toggle: function toggle(key, oldBy, oldDesc, page, mustSort, multiSort) {
+      var by = oldBy.slice();
+      var desc = oldDesc.slice();
+      var byIndex = by.findIndex(function (k) {
+        return k === key;
+      });
+
+      if (byIndex < 0) {
+        if (!multiSort) {
+          by = [];
+          desc = [];
+        }
+
+        by.push(key);
+        desc.push(false);
+      } else if (byIndex >= 0 && !desc[byIndex]) {
+        desc[byIndex] = true;
+      } else if (!mustSort) {
+        by.splice(byIndex, 1);
+        desc.splice(byIndex, 1);
+      } else {
+        desc[byIndex] = false;
+      } // Reset page to 1 if sortBy or sortDesc have changed
+
+
+      if (!deepEqual(by, oldBy) || !deepEqual(desc, oldDesc)) {
+        page = 1;
+      }
+
+      return {
+        by: by,
+        desc: desc,
+        page: page
+      };
+    },
+    group: function group(key) {
+      var _this$toggle = this.toggle(key, this.internalOptions.groupBy, this.internalOptions.groupDesc, this.internalOptions.page, true, false),
+          groupBy = _this$toggle.by,
+          groupDesc = _this$toggle.desc,
+          page = _this$toggle.page;
+
+      this.updateOptions({
+        groupBy: groupBy,
+        groupDesc: groupDesc,
+        page: page
+      });
+    },
+    sort: function sort(key) {
+      if (Array.isArray(key)) return this.sortArray(key);
+
+      var _this$toggle2 = this.toggle(key, this.internalOptions.sortBy, this.internalOptions.sortDesc, this.internalOptions.page, this.internalOptions.mustSort, this.internalOptions.multiSort),
+          sortBy = _this$toggle2.by,
+          sortDesc = _this$toggle2.desc,
+          page = _this$toggle2.page;
+
+      this.updateOptions({
+        sortBy: sortBy,
+        sortDesc: sortDesc,
+        page: page
+      });
+    },
+    sortArray: function sortArray(sortBy) {
+      var _this = this;
+
+      var sortDesc = sortBy.map(function (s) {
+        var i = _this.internalOptions.sortBy.findIndex(function (k) {
+          return k === s;
+        });
+
+        return i > -1 ? _this.internalOptions.sortDesc[i] : false;
+      });
+      this.updateOptions({
+        sortBy: sortBy,
+        sortDesc: sortDesc
+      });
+    },
+    updateOptions: function updateOptions(options) {
+      this.internalOptions = _objectSpread2(_objectSpread2(_objectSpread2({}, this.internalOptions), options), {}, {
+        page: this.serverItemsLength < 0 ? Math.max(1, Math.min(options.page || this.internalOptions.page, this.pageCount)) : options.page || this.internalOptions.page
+      });
+    },
+    sortItems: function sortItems(items) {
+      var sortBy = this.internalOptions.sortBy;
+      var sortDesc = this.internalOptions.sortDesc;
+
+      if (this.internalOptions.groupBy.length) {
+        sortBy = [].concat(_toConsumableArray(this.internalOptions.groupBy), _toConsumableArray(sortBy));
+        sortDesc = [].concat(_toConsumableArray(this.internalOptions.groupDesc), _toConsumableArray(sortDesc));
+      }
+
+      return this.customSort(items, sortBy, sortDesc, this.locale);
+    },
+    groupItems: function groupItems(items) {
+      return this.customGroup(items, this.internalOptions.groupBy, this.internalOptions.groupDesc);
+    },
+    paginateItems: function paginateItems(items) {
+      // Make sure we don't try to display non-existant page if items suddenly change
+      // TODO: Could possibly move this to pageStart/pageStop?
+      if (this.serverItemsLength === -1 && items.length <= this.pageStart) {
+        this.internalOptions.page = Math.max(1, this.internalOptions.page - 1);
+      }
+
+      return items.slice(this.pageStart, this.pageStop);
+    }
+  },
+  render: function render() {
+    return this.$scopedSlots.default && this.$scopedSlots.default(this.scopedProps);
+  }
+}));
+// EXTERNAL MODULE: ./node_modules/vuetify/src/components/VDataIterator/VDataFooter.sass
+var VDataFooter = __webpack_require__("495d");
+
+// EXTERNAL MODULE: ./node_modules/core-js/modules/es.map.js
+var es_map = __webpack_require__("4ec9");
+
+// EXTERNAL MODULE: ./node_modules/vuetify/src/components/VSelect/VSelect.sass
+var VSelect = __webpack_require__("68dd");
+
+// EXTERNAL MODULE: ./node_modules/vuetify/src/components/VChip/VChip.sass
+var VChip = __webpack_require__("8adc");
+
+// CONCATENATED MODULE: ./node_modules/vuetify/lib/components/VChip/VChip.js
+
+
+
+
+// Styles
+
+ // Components
+
+
+ // Mixins
+
+
+
+
+
+
+ // Utilities
+
+
+/* @vue/component */
+
+/* harmony default export */ var VChip_VChip = (mixins(colorable, sizeable, routable, themeable, factory('chipGroup'), toggleable_factory('inputValue')).extend({
+  name: 'v-chip',
+  props: {
+    active: {
+      type: Boolean,
+      default: true
+    },
+    activeClass: {
+      type: String,
+      default: function _default() {
+        if (!this.chipGroup) return '';
+        return this.chipGroup.activeClass;
+      }
+    },
+    close: Boolean,
+    closeIcon: {
+      type: String,
+      default: '$delete'
+    },
+    disabled: Boolean,
+    draggable: Boolean,
+    filter: Boolean,
+    filterIcon: {
+      type: String,
+      default: '$complete'
+    },
+    label: Boolean,
+    link: Boolean,
+    outlined: Boolean,
+    pill: Boolean,
+    tag: {
+      type: String,
+      default: 'span'
+    },
+    textColor: String,
+    value: null
+  },
+  data: function data() {
+    return {
+      proxyClass: 'v-chip--active'
+    };
+  },
+  computed: {
+    classes: function classes() {
+      return _objectSpread2(_objectSpread2(_objectSpread2(_objectSpread2({
+        'v-chip': true
+      }, routable.options.computed.classes.call(this)), {}, {
+        'v-chip--clickable': this.isClickable,
+        'v-chip--disabled': this.disabled,
+        'v-chip--draggable': this.draggable,
+        'v-chip--label': this.label,
+        'v-chip--link': this.isLink,
+        'v-chip--no-color': !this.color,
+        'v-chip--outlined': this.outlined,
+        'v-chip--pill': this.pill,
+        'v-chip--removable': this.hasClose
+      }, this.themeClasses), this.sizeableClasses), this.groupClasses);
+    },
+    hasClose: function hasClose() {
+      return Boolean(this.close);
+    },
+    isClickable: function isClickable() {
+      return Boolean(routable.options.computed.isClickable.call(this) || this.chipGroup);
+    }
+  },
+  created: function created() {
+    var _this = this;
+
+    var breakingProps = [['outline', 'outlined'], ['selected', 'input-value'], ['value', 'active'], ['@input', '@active.sync']];
+    /* istanbul ignore next */
+
+    breakingProps.forEach(function (_ref) {
+      var _ref2 = _slicedToArray(_ref, 2),
+          original = _ref2[0],
+          replacement = _ref2[1];
+
+      if (_this.$attrs.hasOwnProperty(original)) breaking(original, replacement, _this);
+    });
+  },
+  methods: {
+    click: function click(e) {
+      this.$emit('click', e);
+      this.chipGroup && this.toggle();
+    },
+    genFilter: function genFilter() {
+      var children = [];
+
+      if (this.isActive) {
+        children.push(this.$createElement(components_VIcon, {
+          staticClass: 'v-chip__filter',
+          props: {
+            left: true
+          }
+        }, this.filterIcon));
+      }
+
+      return this.$createElement(VExpandXTransition, children);
+    },
+    genClose: function genClose() {
+      var _this2 = this;
+
+      return this.$createElement(components_VIcon, {
+        staticClass: 'v-chip__close',
+        props: {
+          right: true,
+          size: 18
+        },
+        on: {
+          click: function click(e) {
+            e.stopPropagation();
+            e.preventDefault();
+
+            _this2.$emit('click:close');
+
+            _this2.$emit('update:active', false);
+          }
+        }
+      }, this.closeIcon);
+    },
+    genContent: function genContent() {
+      return this.$createElement('span', {
+        staticClass: 'v-chip__content'
+      }, [this.filter && this.genFilter(), this.$slots.default, this.hasClose && this.genClose()]);
+    }
+  },
+  render: function render(h) {
+    var children = [this.genContent()];
+
+    var _this$generateRouteLi = this.generateRouteLink(),
+        tag = _this$generateRouteLi.tag,
+        data = _this$generateRouteLi.data;
+
+    data.attrs = _objectSpread2(_objectSpread2({}, data.attrs), {}, {
+      draggable: this.draggable ? 'true' : undefined,
+      tabindex: this.chipGroup && !this.disabled ? 0 : data.attrs.tabindex
+    });
+    data.directives.push({
+      name: 'show',
+      value: this.active
+    });
+    data = this.setBackgroundColor(this.color, data);
+    var color = this.textColor || this.outlined && this.color;
+    return h(tag, this.setTextColor(color, data), children);
+  }
+}));
+// CONCATENATED MODULE: ./node_modules/vuetify/lib/components/VChip/index.js
+
+
+/* harmony default export */ var components_VChip = (VChip_VChip);
+// CONCATENATED MODULE: ./node_modules/vuetify/lib/components/VMenu/index.js
+
+
+/* harmony default export */ var components_VMenu = (VMenu_VMenu);
+// EXTERNAL MODULE: ./node_modules/vuetify/src/components/VCheckbox/VSimpleCheckbox.sass
+var VSimpleCheckbox = __webpack_require__("cf36");
+
+// CONCATENATED MODULE: ./node_modules/vuetify/lib/components/VCheckbox/VSimpleCheckbox.js
+
+
+
+
+
+
+ // Mixins
+
+
+ // Utilities
+
+
+
+/* harmony default export */ var VCheckbox_VSimpleCheckbox = (external_commonjs_vue_commonjs2_vue_root_Vue_default.a.extend({
+  name: 'v-simple-checkbox',
+  functional: true,
+  directives: {
+    ripple: ripple
+  },
+  props: _objectSpread2(_objectSpread2(_objectSpread2({}, colorable.options.props), themeable.options.props), {}, {
+    disabled: Boolean,
+    ripple: {
+      type: Boolean,
+      default: true
+    },
+    value: Boolean,
+    indeterminate: Boolean,
+    indeterminateIcon: {
+      type: String,
+      default: '$checkboxIndeterminate'
+    },
+    onIcon: {
+      type: String,
+      default: '$checkboxOn'
+    },
+    offIcon: {
+      type: String,
+      default: '$checkboxOff'
+    }
+  }),
+  render: function render(h, _ref) {
+    var props = _ref.props,
+        data = _ref.data,
+        listeners = _ref.listeners;
+    var children = [];
+
+    if (props.ripple && !props.disabled) {
+      var _ripple = h('div', colorable.options.methods.setTextColor(props.color, {
+        staticClass: 'v-input--selection-controls__ripple',
+        directives: [{
+          name: 'ripple',
+          value: {
+            center: true
+          }
+        }]
+      }));
+
+      children.push(_ripple);
+    }
+
+    var icon = props.offIcon;
+    if (props.indeterminate) icon = props.indeterminateIcon;else if (props.value) icon = props.onIcon;
+    children.push(h(components_VIcon_VIcon, colorable.options.methods.setTextColor(props.value && props.color, {
+      props: {
+        disabled: props.disabled,
+        dark: props.dark,
+        light: props.light
+      }
+    }), icon));
+    var classes = {
+      'v-simple-checkbox': true,
+      'v-simple-checkbox--disabled': props.disabled
+    };
+    return h('div', mergeData(data, {
+      class: classes,
+      on: {
+        click: function click(e) {
+          e.stopPropagation();
+
+          if (data.on && data.on.input && !props.disabled) {
+            wrapInArray(data.on.input).forEach(function (f) {
+              return f(!props.value);
+            });
+          }
+        }
+      }
+    }), children);
+  }
+}));
+// EXTERNAL MODULE: ./node_modules/vuetify/src/components/VDivider/VDivider.sass
+var VDivider = __webpack_require__("8ce9");
+
+// CONCATENATED MODULE: ./node_modules/vuetify/lib/components/VDivider/VDivider.js
+
+// Styles
+ // Mixins
+
+
+/* harmony default export */ var VDivider_VDivider = (themeable.extend({
+  name: 'v-divider',
+  props: {
+    inset: Boolean,
+    vertical: Boolean
+  },
+  render: function render(h) {
+    // WAI-ARIA attributes
+    var orientation;
+
+    if (!this.$attrs.role || this.$attrs.role === 'separator') {
+      orientation = this.vertical ? 'vertical' : 'horizontal';
+    }
+
+    return h('hr', {
+      class: _objectSpread2({
+        'v-divider': true,
+        'v-divider--inset': this.inset,
+        'v-divider--vertical': this.vertical
+      }, this.themeClasses),
+      attrs: _objectSpread2({
+        role: 'separator',
+        'aria-orientation': orientation
+      }, this.$attrs),
+      on: this.$listeners
+    });
+  }
+}));
+// CONCATENATED MODULE: ./node_modules/vuetify/lib/components/VDivider/index.js
+
+
+/* harmony default export */ var components_VDivider = (VDivider_VDivider);
+// EXTERNAL MODULE: ./node_modules/vuetify/src/components/VSubheader/VSubheader.sass
+var VSubheader = __webpack_require__("0bc6");
+
+// CONCATENATED MODULE: ./node_modules/vuetify/lib/components/VSubheader/VSubheader.js
+
+// Styles
+ // Mixins
+
+
+
+/* harmony default export */ var VSubheader_VSubheader = (mixins(themeable
+/* @vue/component */
+).extend({
+  name: 'v-subheader',
+  props: {
+    inset: Boolean
+  },
+  render: function render(h) {
+    return h('div', {
+      staticClass: 'v-subheader',
+      class: _objectSpread2({
+        'v-subheader--inset': this.inset
+      }, this.themeClasses),
+      attrs: this.$attrs,
+      on: this.$listeners
+    }, this.$slots.default);
+  }
+}));
+// CONCATENATED MODULE: ./node_modules/vuetify/lib/components/VSubheader/index.js
+
+
+/* harmony default export */ var components_VSubheader = (VSubheader_VSubheader);
+// CONCATENATED MODULE: ./node_modules/vuetify/lib/components/VSelect/VSelectList.js
+
+
+
+
+
+
+
+
+
+
+// Components
+
+
+
+ // Directives
+
+ // Mixins
+
+
+ // Helpers
+
+ // Types
+
+
+/* @vue/component */
+
+/* harmony default export */ var VSelectList = (mixins(colorable, themeable).extend({
+  name: 'v-select-list',
+  // https://github.com/vuejs/vue/issues/6872
+  directives: {
+    ripple: ripple
+  },
+  props: {
+    action: Boolean,
+    dense: Boolean,
+    hideSelected: Boolean,
+    items: {
+      type: Array,
+      default: function _default() {
+        return [];
+      }
+    },
+    itemDisabled: {
+      type: [String, Array, Function],
+      default: 'disabled'
+    },
+    itemText: {
+      type: [String, Array, Function],
+      default: 'text'
+    },
+    itemValue: {
+      type: [String, Array, Function],
+      default: 'value'
+    },
+    noDataText: String,
+    noFilter: Boolean,
+    searchInput: null,
+    selectedItems: {
+      type: Array,
+      default: function _default() {
+        return [];
+      }
+    }
+  },
+  computed: {
+    parsedItems: function parsedItems() {
+      var _this = this;
+
+      return this.selectedItems.map(function (item) {
+        return _this.getValue(item);
+      });
+    },
+    tileActiveClass: function tileActiveClass() {
+      return Object.keys(this.setTextColor(this.color).class || {}).join(' ');
+    },
+    staticNoDataTile: function staticNoDataTile() {
+      var tile = {
+        attrs: {
+          role: undefined
+        },
+        on: {
+          mousedown: function mousedown(e) {
+            return e.preventDefault();
+          }
+        }
+      };
+      return this.$createElement(VList_VListItem, tile, [this.genTileContent(this.noDataText)]);
+    }
+  },
+  methods: {
+    genAction: function genAction(item, inputValue) {
+      var _this2 = this;
+
+      return this.$createElement(VListItemAction, [this.$createElement(VCheckbox_VSimpleCheckbox, {
+        props: {
+          color: this.color,
+          value: inputValue
+        },
+        on: {
+          input: function input() {
+            return _this2.$emit('select', item);
+          }
+        }
+      })]);
+    },
+    genDivider: function genDivider(props) {
+      return this.$createElement(components_VDivider, {
+        props: props
+      });
+    },
+    genFilteredText: function genFilteredText(text) {
+      text = text || '';
+      if (!this.searchInput || this.noFilter) return escapeHTML(text);
+
+      var _this$getMaskedCharac = this.getMaskedCharacters(text),
+          start = _this$getMaskedCharac.start,
+          middle = _this$getMaskedCharac.middle,
+          end = _this$getMaskedCharac.end;
+
+      return "".concat(escapeHTML(start)).concat(this.genHighlight(middle)).concat(escapeHTML(end));
+    },
+    genHeader: function genHeader(props) {
+      return this.$createElement(components_VSubheader, {
+        props: props
+      }, props.header);
+    },
+    genHighlight: function genHighlight(text) {
+      return "<span class=\"v-list-item__mask\">".concat(escapeHTML(text), "</span>");
+    },
+    getMaskedCharacters: function getMaskedCharacters(text) {
+      var searchInput = (this.searchInput || '').toString().toLocaleLowerCase();
+      var index = text.toLocaleLowerCase().indexOf(searchInput);
+      if (index < 0) return {
+        start: '',
+        middle: text,
+        end: ''
+      };
+      var start = text.slice(0, index);
+      var middle = text.slice(index, index + searchInput.length);
+      var end = text.slice(index + searchInput.length);
+      return {
+        start: start,
+        middle: middle,
+        end: end
+      };
+    },
+    genTile: function genTile(_ref) {
+      var _this3 = this;
+
+      var item = _ref.item,
+          index = _ref.index,
+          _ref$disabled = _ref.disabled,
+          disabled = _ref$disabled === void 0 ? null : _ref$disabled,
+          _ref$value = _ref.value,
+          value = _ref$value === void 0 ? false : _ref$value;
+      if (!value) value = this.hasItem(item);
+
+      if (item === Object(item)) {
+        disabled = disabled !== null ? disabled : this.getDisabled(item);
+      }
+
+      var tile = {
+        attrs: {
+          // Default behavior in list does not
+          // contain aria-selected by default
+          'aria-selected': String(value),
+          id: "list-item-".concat(this._uid, "-").concat(index),
+          role: 'option'
+        },
+        on: {
+          mousedown: function mousedown(e) {
+            // Prevent onBlur from being called
+            e.preventDefault();
+          },
+          click: function click() {
+            return disabled || _this3.$emit('select', item);
+          }
+        },
+        props: {
+          activeClass: this.tileActiveClass,
+          disabled: disabled,
+          ripple: true,
+          inputValue: value
+        }
+      };
+
+      if (!this.$scopedSlots.item) {
+        return this.$createElement(VList_VListItem, tile, [this.action && !this.hideSelected && this.items.length > 0 ? this.genAction(item, value) : null, this.genTileContent(item, index)]);
+      }
+
+      var parent = this;
+      var scopedSlot = this.$scopedSlots.item({
+        parent: parent,
+        item: item,
+        attrs: _objectSpread2(_objectSpread2({}, tile.attrs), tile.props),
+        on: tile.on
+      });
+      return this.needsTile(scopedSlot) ? this.$createElement(VList_VListItem, tile, scopedSlot) : scopedSlot;
+    },
+    genTileContent: function genTileContent(item) {
+      var index = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : 0;
+      var innerHTML = this.genFilteredText(this.getText(item));
+      return this.$createElement(VListItemContent, [this.$createElement(VListItemTitle, {
+        domProps: {
+          innerHTML: innerHTML
+        }
+      })]);
+    },
+    hasItem: function hasItem(item) {
+      return this.parsedItems.indexOf(this.getValue(item)) > -1;
+    },
+    needsTile: function needsTile(slot) {
+      return slot.length !== 1 || slot[0].componentOptions == null || slot[0].componentOptions.Ctor.options.name !== 'v-list-item';
+    },
+    getDisabled: function getDisabled(item) {
+      return Boolean(getPropertyFromItem(item, this.itemDisabled, false));
+    },
+    getText: function getText(item) {
+      return String(getPropertyFromItem(item, this.itemText, item));
+    },
+    getValue: function getValue(item) {
+      return getPropertyFromItem(item, this.itemValue, this.getText(item));
+    }
+  },
+  render: function render() {
+    var children = [];
+    var itemsLength = this.items.length;
+
+    for (var index = 0; index < itemsLength; index++) {
+      var item = this.items[index];
+      if (this.hideSelected && this.hasItem(item)) continue;
+      if (item == null) children.push(this.genTile({
+        item: item,
+        index: index
+      }));else if (item.header) children.push(this.genHeader(item));else if (item.divider) children.push(this.genDivider(item));else children.push(this.genTile({
+        item: item,
+        index: index
+      }));
+    }
+
+    children.length || children.push(this.$slots['no-data'] || this.staticNoDataTile);
+    this.$slots['prepend-item'] && children.unshift(this.$slots['prepend-item']);
+    this.$slots['append-item'] && children.push(this.$slots['append-item']);
+    return this.$createElement(VList_VList, {
+      staticClass: 'v-select-list',
+      class: this.themeClasses,
+      attrs: {
+        role: 'listbox',
+        tabindex: -1
+      },
+      props: {
+        dense: this.dense
+      }
+    }, children);
+  }
+}));
+// CONCATENATED MODULE: ./node_modules/vuetify/lib/mixins/comparable/index.js
+
+
+/* harmony default export */ var comparable = (external_commonjs_vue_commonjs2_vue_root_Vue_default.a.extend({
+  name: 'comparable',
+  props: {
+    valueComparator: {
+      type: Function,
+      default: deepEqual
+    }
+  }
+}));
+// CONCATENATED MODULE: ./node_modules/vuetify/lib/mixins/filterable/index.js
+
+/* @vue/component */
+
+/* harmony default export */ var filterable = (external_commonjs_vue_commonjs2_vue_root_Vue_default.a.extend({
+  name: 'filterable',
+  props: {
+    noDataText: {
+      type: String,
+      default: '$vuetify.noDataText'
+    }
+  }
+}));
+// CONCATENATED MODULE: ./node_modules/vuetify/lib/components/VSelect/VSelect.js
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+// Styles
+
+ // Components
+
+
+
+ // Extensions
+
+
+ // Mixins
+
+
+ // Directives
+
+ // Utilities
+
+
+
+ // Types
+
+
+var defaultMenuProps = {
+  closeOnClick: false,
+  closeOnContentClick: false,
+  disableKeys: true,
+  openOnClick: false,
+  maxHeight: 304
+}; // Types
+
+var VSelect_baseMixins = mixins(VTextField_VTextField, comparable, filterable);
+/* @vue/component */
+
+/* harmony default export */ var VSelect_VSelect = (VSelect_baseMixins.extend().extend({
+  name: 'v-select',
+  directives: {
+    ClickOutside: click_outside
+  },
+  props: {
+    appendIcon: {
+      type: String,
+      default: '$dropdown'
+    },
+    attach: {
+      type: null,
+      default: false
+    },
+    cacheItems: Boolean,
+    chips: Boolean,
+    clearable: Boolean,
+    deletableChips: Boolean,
+    disableLookup: Boolean,
+    eager: Boolean,
+    hideSelected: Boolean,
+    items: {
+      type: Array,
+      default: function _default() {
+        return [];
+      }
+    },
+    itemColor: {
+      type: String,
+      default: 'primary'
+    },
+    itemDisabled: {
+      type: [String, Array, Function],
+      default: 'disabled'
+    },
+    itemText: {
+      type: [String, Array, Function],
+      default: 'text'
+    },
+    itemValue: {
+      type: [String, Array, Function],
+      default: 'value'
+    },
+    menuProps: {
+      type: [String, Array, Object],
+      default: function _default() {
+        return defaultMenuProps;
+      }
+    },
+    multiple: Boolean,
+    openOnClear: Boolean,
+    returnObject: Boolean,
+    smallChips: Boolean
+  },
+  data: function data() {
+    return {
+      cachedItems: this.cacheItems ? this.items : [],
+      menuIsBooted: false,
+      isMenuActive: false,
+      lastItem: 20,
+      // As long as a value is defined, show it
+      // Otherwise, check if multiple
+      // to determine which default to provide
+      lazyValue: this.value !== undefined ? this.value : this.multiple ? [] : undefined,
+      selectedIndex: -1,
+      selectedItems: [],
+      keyboardLookupPrefix: '',
+      keyboardLookupLastTime: 0
+    };
+  },
+  computed: {
+    /* All items that the select has */
+    allItems: function allItems() {
+      return this.filterDuplicates(this.cachedItems.concat(this.items));
+    },
+    classes: function classes() {
+      return _objectSpread2(_objectSpread2({}, VTextField_VTextField.options.computed.classes.call(this)), {}, {
+        'v-select': true,
+        'v-select--chips': this.hasChips,
+        'v-select--chips--small': this.smallChips,
+        'v-select--is-menu-active': this.isMenuActive,
+        'v-select--is-multi': this.multiple
+      });
+    },
+
+    /* Used by other components to overwrite */
+    computedItems: function computedItems() {
+      return this.allItems;
+    },
+    computedOwns: function computedOwns() {
+      return "list-".concat(this._uid);
+    },
+    computedCounterValue: function computedCounterValue() {
+      return this.multiple ? this.selectedItems.length : (this.getText(this.selectedItems[0]) || '').toString().length;
+    },
+    directives: function directives() {
+      return this.isFocused ? [{
+        name: 'click-outside',
+        value: {
+          handler: this.blur,
+          closeConditional: this.closeConditional
+        }
+      }] : undefined;
+    },
+    dynamicHeight: function dynamicHeight() {
+      return 'auto';
+    },
+    hasChips: function hasChips() {
+      return this.chips || this.smallChips;
+    },
+    hasSlot: function hasSlot() {
+      return Boolean(this.hasChips || this.$scopedSlots.selection);
+    },
+    isDirty: function isDirty() {
+      return this.selectedItems.length > 0;
+    },
+    listData: function listData() {
+      var scopeId = this.$vnode && this.$vnode.context.$options._scopeId;
+      var attrs = scopeId ? _defineProperty({}, scopeId, true) : {};
+      return {
+        attrs: _objectSpread2(_objectSpread2({}, attrs), {}, {
+          id: this.computedOwns
+        }),
+        props: {
+          action: this.multiple,
+          color: this.itemColor,
+          dense: this.dense,
+          hideSelected: this.hideSelected,
+          items: this.virtualizedItems,
+          itemDisabled: this.itemDisabled,
+          itemText: this.itemText,
+          itemValue: this.itemValue,
+          noDataText: this.$vuetify.lang.t(this.noDataText),
+          selectedItems: this.selectedItems
+        },
+        on: {
+          select: this.selectItem
+        },
+        scopedSlots: {
+          item: this.$scopedSlots.item
+        }
+      };
+    },
+    staticList: function staticList() {
+      if (this.$slots['no-data'] || this.$slots['prepend-item'] || this.$slots['append-item']) {
+        consoleError('assert: staticList should not be called if slots are used');
+      }
+
+      return this.$createElement(VSelectList, this.listData);
+    },
+    virtualizedItems: function virtualizedItems() {
+      return this.$_menuProps.auto ? this.computedItems : this.computedItems.slice(0, this.lastItem);
+    },
+    menuCanShow: function menuCanShow() {
+      return true;
+    },
+    $_menuProps: function $_menuProps() {
+      var normalisedProps = typeof this.menuProps === 'string' ? this.menuProps.split(',') : this.menuProps;
+
+      if (Array.isArray(normalisedProps)) {
+        normalisedProps = normalisedProps.reduce(function (acc, p) {
+          acc[p.trim()] = true;
+          return acc;
+        }, {});
+      }
+
+      return _objectSpread2(_objectSpread2({}, defaultMenuProps), {}, {
+        eager: this.eager,
+        value: this.menuCanShow && this.isMenuActive,
+        nudgeBottom: normalisedProps.offsetY ? 1 : 0
+      }, normalisedProps);
+    }
+  },
+  watch: {
+    internalValue: function internalValue(val) {
+      this.initialValue = val;
+      this.setSelectedItems();
+    },
+    isMenuActive: function isMenuActive(val) {
+      var _this = this;
+
+      window.setTimeout(function () {
+        return _this.onMenuActiveChange(val);
+      });
+    },
+    items: {
+      immediate: true,
+      handler: function handler(val) {
+        var _this2 = this;
+
+        if (this.cacheItems) {
+          // Breaks vue-test-utils if
+          // this isn't calculated
+          // on the next tick
+          this.$nextTick(function () {
+            _this2.cachedItems = _this2.filterDuplicates(_this2.cachedItems.concat(val));
+          });
+        }
+
+        this.setSelectedItems();
+      }
+    }
+  },
+  methods: {
+    /** @public */
+    blur: function blur(e) {
+      VTextField_VTextField.options.methods.blur.call(this, e);
+      this.isMenuActive = false;
+      this.isFocused = false;
+      this.selectedIndex = -1;
+    },
+
+    /** @public */
+    activateMenu: function activateMenu() {
+      if (!this.isInteractive || this.isMenuActive) return;
+      this.isMenuActive = true;
+    },
+    clearableCallback: function clearableCallback() {
+      var _this3 = this;
+
+      this.setValue(this.multiple ? [] : undefined);
+      this.setMenuIndex(-1);
+      this.$nextTick(function () {
+        return _this3.$refs.input && _this3.$refs.input.focus();
+      });
+      if (this.openOnClear) this.isMenuActive = true;
+    },
+    closeConditional: function closeConditional(e) {
+      if (!this.isMenuActive) return true;
+      return !this._isDestroyed && ( // Click originates from outside the menu content
+      // Multiple selects don't close when an item is clicked
+      !this.getContent() || !this.getContent().contains(e.target)) && // Click originates from outside the element
+      this.$el && !this.$el.contains(e.target) && e.target !== this.$el;
+    },
+    filterDuplicates: function filterDuplicates(arr) {
+      var uniqueValues = new Map();
+
+      for (var index = 0; index < arr.length; ++index) {
+        var item = arr[index];
+        var val = this.getValue(item); // TODO: comparator
+
+        !uniqueValues.has(val) && uniqueValues.set(val, item);
+      }
+
+      return Array.from(uniqueValues.values());
+    },
+    findExistingIndex: function findExistingIndex(item) {
+      var _this4 = this;
+
+      var itemValue = this.getValue(item);
+      return (this.internalValue || []).findIndex(function (i) {
+        return _this4.valueComparator(_this4.getValue(i), itemValue);
+      });
+    },
+    getContent: function getContent() {
+      return this.$refs.menu && this.$refs.menu.$refs.content;
+    },
+    genChipSelection: function genChipSelection(item, index) {
+      var _this5 = this;
+
+      var isDisabled = !this.isInteractive || this.getDisabled(item);
+      return this.$createElement(components_VChip, {
+        staticClass: 'v-chip--select',
+        attrs: {
+          tabindex: -1
+        },
+        props: {
+          close: this.deletableChips && !isDisabled,
+          disabled: isDisabled,
+          inputValue: index === this.selectedIndex,
+          small: this.smallChips
+        },
+        on: {
+          click: function click(e) {
+            if (isDisabled) return;
+            e.stopPropagation();
+            _this5.selectedIndex = index;
+          },
+          'click:close': function clickClose() {
+            return _this5.onChipInput(item);
+          }
+        },
+        key: JSON.stringify(this.getValue(item))
+      }, this.getText(item));
+    },
+    genCommaSelection: function genCommaSelection(item, index, last) {
+      var color = index === this.selectedIndex && this.computedColor;
+      var isDisabled = !this.isInteractive || this.getDisabled(item);
+      return this.$createElement('div', this.setTextColor(color, {
+        staticClass: 'v-select__selection v-select__selection--comma',
+        class: {
+          'v-select__selection--disabled': isDisabled
+        },
+        key: JSON.stringify(this.getValue(item))
+      }), "".concat(this.getText(item)).concat(last ? '' : ', '));
+    },
+    genDefaultSlot: function genDefaultSlot() {
+      var selections = this.genSelections();
+      var input = this.genInput(); // If the return is an empty array
+      // push the input
+
+      if (Array.isArray(selections)) {
+        selections.push(input); // Otherwise push it into children
+      } else {
+        selections.children = selections.children || [];
+        selections.children.push(input);
+      }
+
+      return [this.genFieldset(), this.$createElement('div', {
+        staticClass: 'v-select__slot',
+        directives: this.directives
+      }, [this.genLabel(), this.prefix ? this.genAffix('prefix') : null, selections, this.suffix ? this.genAffix('suffix') : null, this.genClearIcon(), this.genIconSlot(), this.genHiddenInput()]), this.genMenu(), this.genProgress()];
+    },
+    genIcon: function genIcon(type, cb, extraData) {
+      var icon = components_VInput.options.methods.genIcon.call(this, type, cb, extraData);
+
+      if (type === 'append') {
+        // Don't allow the dropdown icon to be focused
+        icon.children[0].data = mergeData(icon.children[0].data, {
+          attrs: {
+            tabindex: icon.children[0].componentOptions.listeners && '-1',
+            'aria-hidden': 'true',
+            'aria-label': undefined
+          }
+        });
+      }
+
+      return icon;
+    },
+    genInput: function genInput() {
+      var input = VTextField_VTextField.options.methods.genInput.call(this);
+      delete input.data.attrs.name;
+      input.data = mergeData(input.data, {
+        domProps: {
+          value: null
+        },
+        attrs: {
+          readonly: true,
+          type: 'text',
+          'aria-readonly': String(this.isReadonly),
+          'aria-activedescendant': getObjectValueByPath(this.$refs.menu, 'activeTile.id'),
+          autocomplete: getObjectValueByPath(input.data, 'attrs.autocomplete', 'off')
+        },
+        on: {
+          keypress: this.onKeyPress
+        }
+      });
+      return input;
+    },
+    genHiddenInput: function genHiddenInput() {
+      return this.$createElement('input', {
+        domProps: {
+          value: this.lazyValue
+        },
+        attrs: {
+          type: 'hidden',
+          name: this.attrs$.name
+        }
+      });
+    },
+    genInputSlot: function genInputSlot() {
+      var render = VTextField_VTextField.options.methods.genInputSlot.call(this);
+      render.data.attrs = _objectSpread2(_objectSpread2({}, render.data.attrs), {}, {
+        role: 'button',
+        'aria-haspopup': 'listbox',
+        'aria-expanded': String(this.isMenuActive),
+        'aria-owns': this.computedOwns
+      });
+      return render;
+    },
+    genList: function genList() {
+      // If there's no slots, we can use a cached VNode to improve performance
+      if (this.$slots['no-data'] || this.$slots['prepend-item'] || this.$slots['append-item']) {
+        return this.genListWithSlot();
+      } else {
+        return this.staticList;
+      }
+    },
+    genListWithSlot: function genListWithSlot() {
+      var _this6 = this;
+
+      var slots = ['prepend-item', 'no-data', 'append-item'].filter(function (slotName) {
+        return _this6.$slots[slotName];
+      }).map(function (slotName) {
+        return _this6.$createElement('template', {
+          slot: slotName
+        }, _this6.$slots[slotName]);
+      }); // Requires destructuring due to Vue
+      // modifying the `on` property when passed
+      // as a referenced object
+
+      return this.$createElement(VSelectList, _objectSpread2({}, this.listData), slots);
+    },
+    genMenu: function genMenu() {
+      var _this7 = this;
+
+      var props = this.$_menuProps;
+      props.activator = this.$refs['input-slot']; // Attach to root el so that
+      // menu covers prepend/append icons
+
+      if ( // TODO: make this a computed property or helper or something
+      this.attach === '' || // If used as a boolean prop (<v-menu attach>)
+      this.attach === true || // If bound to a boolean (<v-menu :attach="true">)
+      this.attach === 'attach' // If bound as boolean prop in pug (v-menu(attach))
+      ) {
+          props.attach = this.$el;
+        } else {
+        props.attach = this.attach;
+      }
+
+      return this.$createElement(components_VMenu, {
+        attrs: {
+          role: undefined
+        },
+        props: props,
+        on: {
+          input: function input(val) {
+            _this7.isMenuActive = val;
+            _this7.isFocused = val;
+          },
+          scroll: this.onScroll
+        },
+        ref: 'menu'
+      }, [this.genList()]);
+    },
+    genSelections: function genSelections() {
+      var length = this.selectedItems.length;
+      var children = new Array(length);
+      var genSelection;
+
+      if (this.$scopedSlots.selection) {
+        genSelection = this.genSlotSelection;
+      } else if (this.hasChips) {
+        genSelection = this.genChipSelection;
+      } else {
+        genSelection = this.genCommaSelection;
+      }
+
+      while (length--) {
+        children[length] = genSelection(this.selectedItems[length], length, length === children.length - 1);
+      }
+
+      return this.$createElement('div', {
+        staticClass: 'v-select__selections'
+      }, children);
+    },
+    genSlotSelection: function genSlotSelection(item, index) {
+      var _this8 = this;
+
+      return this.$scopedSlots.selection({
+        attrs: {
+          class: 'v-chip--select'
+        },
+        parent: this,
+        item: item,
+        index: index,
+        select: function select(e) {
+          e.stopPropagation();
+          _this8.selectedIndex = index;
+        },
+        selected: index === this.selectedIndex,
+        disabled: !this.isInteractive
+      });
+    },
+    getMenuIndex: function getMenuIndex() {
+      return this.$refs.menu ? this.$refs.menu.listIndex : -1;
+    },
+    getDisabled: function getDisabled(item) {
+      return getPropertyFromItem(item, this.itemDisabled, false);
+    },
+    getText: function getText(item) {
+      return getPropertyFromItem(item, this.itemText, item);
+    },
+    getValue: function getValue(item) {
+      return getPropertyFromItem(item, this.itemValue, this.getText(item));
+    },
+    onBlur: function onBlur(e) {
+      e && this.$emit('blur', e);
+    },
+    onChipInput: function onChipInput(item) {
+      if (this.multiple) this.selectItem(item);else this.setValue(null); // If all items have been deleted,
+      // open `v-menu`
+
+      if (this.selectedItems.length === 0) {
+        this.isMenuActive = true;
+      } else {
+        this.isMenuActive = false;
+      }
+
+      this.selectedIndex = -1;
+    },
+    onClick: function onClick(e) {
+      if (!this.isInteractive) return;
+
+      if (!this.isAppendInner(e.target)) {
+        this.isMenuActive = true;
+      }
+
+      if (!this.isFocused) {
+        this.isFocused = true;
+        this.$emit('focus');
+      }
+
+      this.$emit('click', e);
+    },
+    onEscDown: function onEscDown(e) {
+      e.preventDefault();
+
+      if (this.isMenuActive) {
+        e.stopPropagation();
+        this.isMenuActive = false;
+      }
+    },
+    onKeyPress: function onKeyPress(e) {
+      var _this9 = this;
+
+      if (this.multiple || !this.isInteractive || this.disableLookup) return;
+      var KEYBOARD_LOOKUP_THRESHOLD = 1000; // milliseconds
+
+      var now = performance.now();
+
+      if (now - this.keyboardLookupLastTime > KEYBOARD_LOOKUP_THRESHOLD) {
+        this.keyboardLookupPrefix = '';
+      }
+
+      this.keyboardLookupPrefix += e.key.toLowerCase();
+      this.keyboardLookupLastTime = now;
+      var index = this.allItems.findIndex(function (item) {
+        var text = (_this9.getText(item) || '').toString();
+        return text.toLowerCase().startsWith(_this9.keyboardLookupPrefix);
+      });
+      var item = this.allItems[index];
+
+      if (index !== -1) {
+        this.lastItem = Math.max(this.lastItem, index + 5);
+        this.setValue(this.returnObject ? item : this.getValue(item));
+        this.$nextTick(function () {
+          return _this9.$refs.menu.getTiles();
+        });
+        setTimeout(function () {
+          return _this9.setMenuIndex(index);
+        });
+      }
+    },
+    onKeyDown: function onKeyDown(e) {
+      var _this10 = this;
+
+      if (this.isReadonly && e.keyCode !== keyCodes.tab) return;
+      var keyCode = e.keyCode;
+      var menu = this.$refs.menu; // If enter, space, open menu
+
+      if ([keyCodes.enter, keyCodes.space].includes(keyCode)) this.activateMenu();
+      this.$emit('keydown', e);
+      if (!menu) return; // If menu is active, allow default
+      // listIndex change from menu
+
+      if (this.isMenuActive && keyCode !== keyCodes.tab) {
+        this.$nextTick(function () {
+          menu.changeListIndex(e);
+
+          _this10.$emit('update:list-index', menu.listIndex);
+        });
+      } // If menu is not active, up and down can do
+      // one of 2 things. If multiple, opens the
+      // menu, if not, will cycle through all
+      // available options
+
+
+      if (!this.isMenuActive && [keyCodes.up, keyCodes.down].includes(keyCode)) return this.onUpDown(e); // If escape deactivate the menu
+
+      if (keyCode === keyCodes.esc) return this.onEscDown(e); // If tab - select item or close menu
+
+      if (keyCode === keyCodes.tab) return this.onTabDown(e); // If space preventDefault
+
+      if (keyCode === keyCodes.space) return this.onSpaceDown(e);
+    },
+    onMenuActiveChange: function onMenuActiveChange(val) {
+      // If menu is closing and mulitple
+      // or menuIndex is already set
+      // skip menu index recalculation
+      if (this.multiple && !val || this.getMenuIndex() > -1) return;
+      var menu = this.$refs.menu;
+      if (!menu || !this.isDirty) return; // When menu opens, set index of first active item
+
+      for (var i = 0; i < menu.tiles.length; i++) {
+        if (menu.tiles[i].getAttribute('aria-selected') === 'true') {
+          this.setMenuIndex(i);
+          break;
+        }
+      }
+    },
+    onMouseUp: function onMouseUp(e) {
+      var _this11 = this;
+
+      if (this.hasMouseDown && e.which !== 3 && this.isInteractive) {
+        // If append inner is present
+        // and the target is itself
+        // or inside, toggle menu
+        if (this.isAppendInner(e.target)) {
+          this.$nextTick(function () {
+            return _this11.isMenuActive = !_this11.isMenuActive;
+          }); // If user is clicking in the container
+          // and field is enclosed, activate it
+        } else if (this.isEnclosed) {
+          this.isMenuActive = true;
+        }
+      }
+
+      VTextField_VTextField.options.methods.onMouseUp.call(this, e);
+    },
+    onScroll: function onScroll() {
+      var _this12 = this;
+
+      if (!this.isMenuActive) {
+        requestAnimationFrame(function () {
+          return _this12.getContent().scrollTop = 0;
+        });
+      } else {
+        if (this.lastItem > this.computedItems.length) return;
+        var showMoreItems = this.getContent().scrollHeight - (this.getContent().scrollTop + this.getContent().clientHeight) < 200;
+
+        if (showMoreItems) {
+          this.lastItem += 20;
+        }
+      }
+    },
+    onSpaceDown: function onSpaceDown(e) {
+      e.preventDefault();
+    },
+    onTabDown: function onTabDown(e) {
+      var menu = this.$refs.menu;
+      if (!menu) return;
+      var activeTile = menu.activeTile; // An item that is selected by
+      // menu-index should toggled
+
+      if (!this.multiple && activeTile && this.isMenuActive) {
+        e.preventDefault();
+        e.stopPropagation();
+        activeTile.click();
+      } else {
+        // If we make it here,
+        // the user has no selected indexes
+        // and is probably tabbing out
+        this.blur(e);
+      }
+    },
+    onUpDown: function onUpDown(e) {
+      var menu = this.$refs.menu;
+      if (!menu) return;
+      e.preventDefault(); // Multiple selects do not cycle their value
+      // when pressing up or down, instead activate
+      // the menu
+
+      if (this.multiple) return this.activateMenu();
+      var keyCode = e.keyCode; // Cycle through available values to achieve
+      // select native behavior
+
+      menu.isBooted = true;
+      window.requestAnimationFrame(function () {
+        menu.getTiles();
+        keyCodes.up === keyCode ? menu.prevTile() : menu.nextTile();
+        menu.activeTile && menu.activeTile.click();
+      });
+    },
+    selectItem: function selectItem(item) {
+      var _this13 = this;
+
+      if (!this.multiple) {
+        this.setValue(this.returnObject ? item : this.getValue(item));
+        this.isMenuActive = false;
+      } else {
+        var internalValue = (this.internalValue || []).slice();
+        var i = this.findExistingIndex(item);
+        i !== -1 ? internalValue.splice(i, 1) : internalValue.push(item);
+        this.setValue(internalValue.map(function (i) {
+          return _this13.returnObject ? i : _this13.getValue(i);
+        })); // When selecting multiple
+        // adjust menu after each
+        // selection
+
+        this.$nextTick(function () {
+          _this13.$refs.menu && _this13.$refs.menu.updateDimensions();
+        }); // We only need to reset list index for multiple
+        // to keep highlight when an item is toggled
+        // on and off
+
+        if (!this.multiple) return;
+        var listIndex = this.getMenuIndex();
+        this.setMenuIndex(-1); // There is no item to re-highlight
+        // when selections are hidden
+
+        if (this.hideSelected) return;
+        this.$nextTick(function () {
+          return _this13.setMenuIndex(listIndex);
+        });
+      }
+    },
+    setMenuIndex: function setMenuIndex(index) {
+      this.$refs.menu && (this.$refs.menu.listIndex = index);
+    },
+    setSelectedItems: function setSelectedItems() {
+      var _this14 = this;
+
+      var selectedItems = [];
+      var values = !this.multiple || !Array.isArray(this.internalValue) ? [this.internalValue] : this.internalValue;
+
+      var _iterator = _createForOfIteratorHelper(values),
+          _step;
+
+      try {
+        var _loop = function _loop() {
+          var value = _step.value;
+
+          var index = _this14.allItems.findIndex(function (v) {
+            return _this14.valueComparator(_this14.getValue(v), _this14.getValue(value));
+          });
+
+          if (index > -1) {
+            selectedItems.push(_this14.allItems[index]);
+          }
+        };
+
+        for (_iterator.s(); !(_step = _iterator.n()).done;) {
+          _loop();
+        }
+      } catch (err) {
+        _iterator.e(err);
+      } finally {
+        _iterator.f();
+      }
+
+      this.selectedItems = selectedItems;
+    },
+    setValue: function setValue(value) {
+      var oldValue = this.internalValue;
+      this.internalValue = value;
+      value !== oldValue && this.$emit('change', value);
+    },
+    isAppendInner: function isAppendInner(target) {
+      // return true if append inner is present
+      // and the target is itself or inside
+      var appendInner = this.$refs['append-inner'];
+      return appendInner && (appendInner === target || appendInner.contains(target));
+    }
+  }
+}));
+// CONCATENATED MODULE: ./node_modules/vuetify/lib/components/VDataIterator/VDataFooter.js
+
+
+
+
+
+
+ // Components
+
+
+
+ // Types
+
+
+/* harmony default export */ var VDataIterator_VDataFooter = (external_commonjs_vue_commonjs2_vue_root_Vue_default.a.extend({
+  name: 'v-data-footer',
+  props: {
+    options: {
+      type: Object,
+      required: true
+    },
+    pagination: {
+      type: Object,
+      required: true
+    },
+    itemsPerPageOptions: {
+      type: Array,
+      default: function _default() {
+        return [5, 10, 15, -1];
+      }
+    },
+    prevIcon: {
+      type: String,
+      default: '$prev'
+    },
+    nextIcon: {
+      type: String,
+      default: '$next'
+    },
+    firstIcon: {
+      type: String,
+      default: '$first'
+    },
+    lastIcon: {
+      type: String,
+      default: '$last'
+    },
+    itemsPerPageText: {
+      type: String,
+      default: '$vuetify.dataFooter.itemsPerPageText'
+    },
+    itemsPerPageAllText: {
+      type: String,
+      default: '$vuetify.dataFooter.itemsPerPageAll'
+    },
+    showFirstLastPage: Boolean,
+    showCurrentPage: Boolean,
+    disablePagination: Boolean,
+    disableItemsPerPage: Boolean,
+    pageText: {
+      type: String,
+      default: '$vuetify.dataFooter.pageText'
+    }
+  },
+  computed: {
+    disableNextPageIcon: function disableNextPageIcon() {
+      return this.options.itemsPerPage <= 0 || this.options.page * this.options.itemsPerPage >= this.pagination.itemsLength || this.pagination.pageStop < 0;
+    },
+    computedDataItemsPerPageOptions: function computedDataItemsPerPageOptions() {
+      var _this = this;
+
+      return this.itemsPerPageOptions.map(function (option) {
+        if (_typeof(option) === 'object') return option;else return _this.genDataItemsPerPageOption(option);
+      });
+    }
+  },
+  methods: {
+    updateOptions: function updateOptions(obj) {
+      this.$emit('update:options', Object.assign({}, this.options, obj));
+    },
+    onFirstPage: function onFirstPage() {
+      this.updateOptions({
+        page: 1
+      });
+    },
+    onPreviousPage: function onPreviousPage() {
+      this.updateOptions({
+        page: this.options.page - 1
+      });
+    },
+    onNextPage: function onNextPage() {
+      this.updateOptions({
+        page: this.options.page + 1
+      });
+    },
+    onLastPage: function onLastPage() {
+      this.updateOptions({
+        page: this.pagination.pageCount
+      });
+    },
+    onChangeItemsPerPage: function onChangeItemsPerPage(itemsPerPage) {
+      this.updateOptions({
+        itemsPerPage: itemsPerPage,
+        page: 1
+      });
+    },
+    genDataItemsPerPageOption: function genDataItemsPerPageOption(option) {
+      return {
+        text: option === -1 ? this.$vuetify.lang.t(this.itemsPerPageAllText) : String(option),
+        value: option
+      };
+    },
+    genItemsPerPageSelect: function genItemsPerPageSelect() {
+      var value = this.options.itemsPerPage;
+      var computedIPPO = this.computedDataItemsPerPageOptions;
+      if (computedIPPO.length <= 1) return null;
+      if (!computedIPPO.find(function (ippo) {
+        return ippo.value === value;
+      })) value = computedIPPO[0];
+      return this.$createElement('div', {
+        staticClass: 'v-data-footer__select'
+      }, [this.$vuetify.lang.t(this.itemsPerPageText), this.$createElement(VSelect_VSelect, {
+        attrs: {
+          'aria-label': this.itemsPerPageText
+        },
+        props: {
+          disabled: this.disableItemsPerPage,
+          items: computedIPPO,
+          value: value,
+          hideDetails: true,
+          auto: true,
+          minWidth: '75px'
+        },
+        on: {
+          input: this.onChangeItemsPerPage
+        }
+      })]);
+    },
+    genPaginationInfo: function genPaginationInfo() {
+      var children = ['–'];
+
+      if (this.pagination.itemsLength && this.pagination.itemsPerPage) {
+        var itemsLength = this.pagination.itemsLength;
+        var pageStart = this.pagination.pageStart + 1;
+        var pageStop = itemsLength < this.pagination.pageStop || this.pagination.pageStop < 0 ? itemsLength : this.pagination.pageStop;
+        children = this.$scopedSlots['page-text'] ? [this.$scopedSlots['page-text']({
+          pageStart: pageStart,
+          pageStop: pageStop,
+          itemsLength: itemsLength
+        })] : [this.$vuetify.lang.t(this.pageText, pageStart, pageStop, itemsLength)];
+      }
+
+      return this.$createElement('div', {
+        class: 'v-data-footer__pagination'
+      }, children);
+    },
+    genIcon: function genIcon(click, disabled, label, icon) {
+      return this.$createElement(components_VBtn, {
+        props: {
+          disabled: disabled || this.disablePagination,
+          icon: true,
+          text: true
+        },
+        on: {
+          click: click
+        },
+        attrs: {
+          'aria-label': label
+        }
+      }, [this.$createElement(components_VIcon, icon)]);
+    },
+    genIcons: function genIcons() {
+      var before = [];
+      var after = [];
+      before.push(this.genIcon(this.onPreviousPage, this.options.page === 1, this.$vuetify.lang.t('$vuetify.dataFooter.prevPage'), this.$vuetify.rtl ? this.nextIcon : this.prevIcon));
+      after.push(this.genIcon(this.onNextPage, this.disableNextPageIcon, this.$vuetify.lang.t('$vuetify.dataFooter.nextPage'), this.$vuetify.rtl ? this.prevIcon : this.nextIcon));
+
+      if (this.showFirstLastPage) {
+        before.unshift(this.genIcon(this.onFirstPage, this.options.page === 1, this.$vuetify.lang.t('$vuetify.dataFooter.firstPage'), this.$vuetify.rtl ? this.lastIcon : this.firstIcon));
+        after.push(this.genIcon(this.onLastPage, this.options.page >= this.pagination.pageCount || this.options.itemsPerPage === -1, this.$vuetify.lang.t('$vuetify.dataFooter.lastPage'), this.$vuetify.rtl ? this.firstIcon : this.lastIcon));
+      }
+
+      return [this.$createElement('div', {
+        staticClass: 'v-data-footer__icons-before'
+      }, before), this.showCurrentPage && this.$createElement('span', [this.options.page.toString()]), this.$createElement('div', {
+        staticClass: 'v-data-footer__icons-after'
+      }, after)];
+    }
+  },
+  render: function render() {
+    return this.$createElement('div', {
+      staticClass: 'v-data-footer'
+    }, [this.genItemsPerPageSelect(), this.genPaginationInfo(), this.genIcons()]);
+  }
+}));
+// CONCATENATED MODULE: ./node_modules/vuetify/lib/components/VDataIterator/VDataIterator.js
+
+
+
+
+
+
+
+
+
+
+
+
+
+// Components
+
+ // Mixins
+
+
+ // Helpers
+
+
+
+
+/* @vue/component */
+
+/* harmony default export */ var VDataIterator = (mixins(mobile, themeable).extend({
+  name: 'v-data-iterator',
+  props: _objectSpread2(_objectSpread2({}, VData.options.props), {}, {
+    itemKey: {
+      type: String,
+      default: 'id'
+    },
+    value: {
+      type: Array,
+      default: function _default() {
+        return [];
+      }
+    },
+    singleSelect: Boolean,
+    expanded: {
+      type: Array,
+      default: function _default() {
+        return [];
+      }
+    },
+    mobileBreakpoint: _objectSpread2(_objectSpread2({}, mobile.options.props.mobileBreakpoint), {}, {
+      default: 600
+    }),
+    singleExpand: Boolean,
+    loading: [Boolean, String],
+    noResultsText: {
+      type: String,
+      default: '$vuetify.dataIterator.noResultsText'
+    },
+    noDataText: {
+      type: String,
+      default: '$vuetify.noDataText'
+    },
+    loadingText: {
+      type: String,
+      default: '$vuetify.dataIterator.loadingText'
+    },
+    hideDefaultFooter: Boolean,
+    footerProps: Object,
+    selectableKey: {
+      type: String,
+      default: 'isSelectable'
+    }
+  }),
+  data: function data() {
+    return {
+      selection: {},
+      expansion: {},
+      internalCurrentItems: []
+    };
+  },
+  computed: {
+    everyItem: function everyItem() {
+      var _this = this;
+
+      return !!this.selectableItems.length && this.selectableItems.every(function (i) {
+        return _this.isSelected(i);
+      });
+    },
+    someItems: function someItems() {
+      var _this2 = this;
+
+      return this.selectableItems.some(function (i) {
+        return _this2.isSelected(i);
+      });
+    },
+    sanitizedFooterProps: function sanitizedFooterProps() {
+      return camelizeObjectKeys(this.footerProps);
+    },
+    selectableItems: function selectableItems() {
+      var _this3 = this;
+
+      return this.internalCurrentItems.filter(function (item) {
+        return _this3.isSelectable(item);
+      });
+    }
+  },
+  watch: {
+    value: {
+      handler: function handler(value) {
+        var _this4 = this;
+
+        this.selection = value.reduce(function (selection, item) {
+          selection[getObjectValueByPath(item, _this4.itemKey)] = item;
+          return selection;
+        }, {});
+      },
+      immediate: true
+    },
+    selection: function selection(value, old) {
+      if (deepEqual(Object.keys(value), Object.keys(old))) return;
+      this.$emit('input', Object.values(value));
+    },
+    expanded: {
+      handler: function handler(value) {
+        var _this5 = this;
+
+        this.expansion = value.reduce(function (expansion, item) {
+          expansion[getObjectValueByPath(item, _this5.itemKey)] = true;
+          return expansion;
+        }, {});
+      },
+      immediate: true
+    },
+    expansion: function expansion(value, old) {
+      var _this6 = this;
+
+      if (deepEqual(value, old)) return;
+      var keys = Object.keys(value).filter(function (k) {
+        return value[k];
+      });
+      var expanded = !keys.length ? [] : this.items.filter(function (i) {
+        return keys.includes(String(getObjectValueByPath(i, _this6.itemKey)));
+      });
+      this.$emit('update:expanded', expanded);
+    }
+  },
+  created: function created() {
+    var _this7 = this;
+
+    var breakingProps = [['disable-initial-sort', 'sort-by'], ['filter', 'custom-filter'], ['pagination', 'options'], ['total-items', 'server-items-length'], ['hide-actions', 'hide-default-footer'], ['rows-per-page-items', 'footer-props.items-per-page-options'], ['rows-per-page-text', 'footer-props.items-per-page-text'], ['prev-icon', 'footer-props.prev-icon'], ['next-icon', 'footer-props.next-icon']];
+    /* istanbul ignore next */
+
+    breakingProps.forEach(function (_ref) {
+      var _ref2 = _slicedToArray(_ref, 2),
+          original = _ref2[0],
+          replacement = _ref2[1];
+
+      if (_this7.$attrs.hasOwnProperty(original)) breaking(original, replacement, _this7);
+    });
+    var removedProps = ['expand', 'content-class', 'content-props', 'content-tag'];
+    /* istanbul ignore next */
+
+    removedProps.forEach(function (prop) {
+      if (_this7.$attrs.hasOwnProperty(prop)) removed(prop);
+    });
+  },
+  methods: {
+    toggleSelectAll: function toggleSelectAll(value) {
+      var selection = Object.assign({}, this.selection);
+
+      for (var i = 0; i < this.selectableItems.length; i++) {
+        var item = this.selectableItems[i];
+        if (!this.isSelectable(item)) continue;
+        var key = getObjectValueByPath(item, this.itemKey);
+        if (value) selection[key] = item;else delete selection[key];
+      }
+
+      this.selection = selection;
+      this.$emit('toggle-select-all', {
+        items: this.internalCurrentItems,
+        value: value
+      });
+    },
+    isSelectable: function isSelectable(item) {
+      return getObjectValueByPath(item, this.selectableKey) !== false;
+    },
+    isSelected: function isSelected(item) {
+      return !!this.selection[getObjectValueByPath(item, this.itemKey)] || false;
+    },
+    select: function select(item) {
+      var value = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : true;
+      var emit = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : true;
+      if (!this.isSelectable(item)) return;
+      var selection = this.singleSelect ? {} : Object.assign({}, this.selection);
+      var key = getObjectValueByPath(item, this.itemKey);
+      if (value) selection[key] = item;else delete selection[key];
+
+      if (this.singleSelect && emit) {
+        var keys = Object.keys(this.selection);
+        var old = keys.length && getObjectValueByPath(this.selection[keys[0]], this.itemKey);
+        old && old !== key && this.$emit('item-selected', {
+          item: this.selection[old],
+          value: false
+        });
+      }
+
+      this.selection = selection;
+      emit && this.$emit('item-selected', {
+        item: item,
+        value: value
+      });
+    },
+    isExpanded: function isExpanded(item) {
+      return this.expansion[getObjectValueByPath(item, this.itemKey)] || false;
+    },
+    expand: function expand(item) {
+      var value = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : true;
+      var expansion = this.singleExpand ? {} : Object.assign({}, this.expansion);
+      var key = getObjectValueByPath(item, this.itemKey);
+      if (value) expansion[key] = true;else delete expansion[key];
+      this.expansion = expansion;
+      this.$emit('item-expanded', {
+        item: item,
+        value: value
+      });
+    },
+    createItemProps: function createItemProps(item) {
+      var _this8 = this;
+
+      return {
+        item: item,
+        select: function select(v) {
+          return _this8.select(item, v);
+        },
+        isSelected: this.isSelected(item),
+        expand: function expand(v) {
+          return _this8.expand(item, v);
+        },
+        isExpanded: this.isExpanded(item),
+        isMobile: this.isMobile
+      };
+    },
+    genEmptyWrapper: function genEmptyWrapper(content) {
+      return this.$createElement('div', content);
+    },
+    genEmpty: function genEmpty(originalItemsLength, filteredItemsLength) {
+      if (originalItemsLength === 0 && this.loading) {
+        var loading = this.$slots['loading'] || this.$vuetify.lang.t(this.loadingText);
+        return this.genEmptyWrapper(loading);
+      } else if (originalItemsLength === 0) {
+        var noData = this.$slots['no-data'] || this.$vuetify.lang.t(this.noDataText);
+        return this.genEmptyWrapper(noData);
+      } else if (filteredItemsLength === 0) {
+        var noResults = this.$slots['no-results'] || this.$vuetify.lang.t(this.noResultsText);
+        return this.genEmptyWrapper(noResults);
+      }
+
+      return null;
+    },
+    genItems: function genItems(props) {
+      var _this9 = this;
+
+      var empty = this.genEmpty(props.originalItemsLength, props.pagination.itemsLength);
+      if (empty) return [empty];
+
+      if (this.$scopedSlots.default) {
+        return this.$scopedSlots.default(_objectSpread2(_objectSpread2({}, props), {}, {
+          isSelected: this.isSelected,
+          select: this.select,
+          isExpanded: this.isExpanded,
+          expand: this.expand
+        }));
+      }
+
+      if (this.$scopedSlots.item) {
+        return props.items.map(function (item) {
+          return _this9.$scopedSlots.item(_this9.createItemProps(item));
+        });
+      }
+
+      return [];
+    },
+    genFooter: function genFooter(props) {
+      if (this.hideDefaultFooter) return null;
+      var data = {
+        props: _objectSpread2(_objectSpread2({}, this.sanitizedFooterProps), {}, {
+          options: props.options,
+          pagination: props.pagination
+        }),
+        on: {
+          'update:options': function updateOptions(value) {
+            return props.updateOptions(value);
+          }
+        }
+      };
+      var scopedSlots = getPrefixedScopedSlots('footer.', this.$scopedSlots);
+      return this.$createElement(VDataIterator_VDataFooter, _objectSpread2({
+        scopedSlots: scopedSlots
+      }, data));
+    },
+    genDefaultScopedSlot: function genDefaultScopedSlot(props) {
+      var outerProps = _objectSpread2(_objectSpread2({}, props), {}, {
+        someItems: this.someItems,
+        everyItem: this.everyItem,
+        toggleSelectAll: this.toggleSelectAll
+      });
+
+      return this.$createElement('div', {
+        staticClass: 'v-data-iterator'
+      }, [getSlot(this, 'header', outerProps, true), this.genItems(props), this.genFooter(props), getSlot(this, 'footer', outerProps, true)]);
+    }
+  },
+  render: function render() {
+    var _this10 = this;
+
+    return this.$createElement(VData, {
+      props: this.$props,
+      on: {
+        'update:options': function updateOptions(v, old) {
+          return !deepEqual(v, old) && _this10.$emit('update:options', v);
+        },
+        'update:page': function updatePage(v) {
+          return _this10.$emit('update:page', v);
+        },
+        'update:items-per-page': function updateItemsPerPage(v) {
+          return _this10.$emit('update:items-per-page', v);
+        },
+        'update:sort-by': function updateSortBy(v) {
+          return _this10.$emit('update:sort-by', v);
+        },
+        'update:sort-desc': function updateSortDesc(v) {
+          return _this10.$emit('update:sort-desc', v);
+        },
+        'update:group-by': function updateGroupBy(v) {
+          return _this10.$emit('update:group-by', v);
+        },
+        'update:group-desc': function updateGroupDesc(v) {
+          return _this10.$emit('update:group-desc', v);
+        },
+        pagination: function pagination(v, old) {
+          return !deepEqual(v, old) && _this10.$emit('pagination', v);
+        },
+        'current-items': function currentItems(v) {
+          _this10.internalCurrentItems = v;
+
+          _this10.$emit('current-items', v);
+        },
+        'page-count': function pageCount(v) {
+          return _this10.$emit('page-count', v);
+        }
+      },
+      scopedSlots: {
+        default: this.genDefaultScopedSlot
+      }
+    });
+  }
+}));
+// EXTERNAL MODULE: ./node_modules/vuetify/src/components/VDataTable/VDataTableHeader.sass
+var VDataTableHeader = __webpack_require__("f823");
+
+// CONCATENATED MODULE: ./node_modules/vuetify/lib/components/VDataTable/mixins/header.js
+
+
+
+
+
+/* harmony default export */ var mixins_header = (mixins().extend({
+  // https://github.com/vuejs/vue/issues/6872
+  directives: {
+    ripple: ripple
+  },
+  props: {
+    headers: {
+      type: Array,
+      default: function _default() {
+        return [];
+      }
+    },
+    options: {
+      type: Object,
+      default: function _default() {
+        return {
+          page: 1,
+          itemsPerPage: 10,
+          sortBy: [],
+          sortDesc: [],
+          groupBy: [],
+          groupDesc: [],
+          multiSort: false,
+          mustSort: false
+        };
+      }
+    },
+    sortIcon: {
+      type: String,
+      default: '$sort'
+    },
+    everyItem: Boolean,
+    someItems: Boolean,
+    showGroupBy: Boolean,
+    singleSelect: Boolean,
+    disableSort: Boolean
+  },
+  methods: {
+    genSelectAll: function genSelectAll() {
+      var _this = this;
+
+      var data = {
+        props: {
+          value: this.everyItem,
+          indeterminate: !this.everyItem && this.someItems
+        },
+        on: {
+          input: function input(v) {
+            return _this.$emit('toggle-select-all', v);
+          }
+        }
+      };
+
+      if (this.$scopedSlots['data-table-select']) {
+        return this.$scopedSlots['data-table-select'](data);
+      }
+
+      return this.$createElement(VCheckbox_VSimpleCheckbox, _objectSpread2({
+        staticClass: 'v-data-table__checkbox'
+      }, data));
+    },
+    genSortIcon: function genSortIcon() {
+      return this.$createElement(components_VIcon, {
+        staticClass: 'v-data-table-header__icon',
+        props: {
+          size: 18
+        }
+      }, [this.sortIcon]);
+    }
+  }
+}));
+// CONCATENATED MODULE: ./node_modules/vuetify/lib/components/VDataTable/VDataTableHeaderMobile.js
+
+
+
+
+
+
+
+
+
+
+
+/* harmony default export */ var VDataTableHeaderMobile = (mixins(mixins_header).extend({
+  name: 'v-data-table-header-mobile',
+  props: {
+    sortByText: {
+      type: String,
+      default: '$vuetify.dataTable.sortBy'
+    }
+  },
+  methods: {
+    genSortChip: function genSortChip(props) {
+      var _this = this;
+
+      var children = [props.item.text];
+      var sortIndex = this.options.sortBy.findIndex(function (k) {
+        return k === props.item.value;
+      });
+      var beingSorted = sortIndex >= 0;
+      var isDesc = this.options.sortDesc[sortIndex];
+      children.push(this.$createElement('div', {
+        staticClass: 'v-chip__close',
+        class: {
+          sortable: true,
+          active: beingSorted,
+          asc: beingSorted && !isDesc,
+          desc: beingSorted && isDesc
+        }
+      }, [this.genSortIcon()]));
+      return this.$createElement(components_VChip, {
+        staticClass: 'sortable',
+        on: {
+          click: function click(e) {
+            e.stopPropagation();
+
+            _this.$emit('sort', props.item.value);
+          }
+        }
+      }, children);
+    },
+    genSortSelect: function genSortSelect(items) {
+      var _this2 = this;
+
+      return this.$createElement(VSelect_VSelect, {
+        props: {
+          label: this.$vuetify.lang.t(this.sortByText),
+          items: items,
+          hideDetails: true,
+          multiple: this.options.multiSort,
+          value: this.options.multiSort ? this.options.sortBy : this.options.sortBy[0],
+          menuProps: {
+            closeOnContentClick: true
+          }
+        },
+        on: {
+          change: function change(v) {
+            return _this2.$emit('sort', v);
+          }
+        },
+        scopedSlots: {
+          selection: function selection(props) {
+            return _this2.genSortChip(props);
+          }
+        }
+      });
+    }
+  },
+  render: function render(h) {
+    var children = [];
+    var header = this.headers.find(function (h) {
+      return h.value === 'data-table-select';
+    });
+
+    if (header && !this.singleSelect) {
+      children.push(this.$createElement('div', {
+        class: ['v-data-table-header-mobile__select'].concat(_toConsumableArray(wrapInArray(header.class))),
+        attrs: {
+          width: header.width
+        }
+      }, [this.genSelectAll()]));
+    }
+
+    var sortHeaders = this.headers.filter(function (h) {
+      return h.sortable !== false && h.value !== 'data-table-select';
+    }).map(function (h) {
+      return {
+        text: h.text,
+        value: h.value
+      };
+    });
+
+    if (!this.disableSort && sortHeaders.length) {
+      children.push(this.genSortSelect(sortHeaders));
+    }
+
+    var th = h('th', [h('div', {
+      staticClass: 'v-data-table-header-mobile__wrapper'
+    }, children)]);
+    var tr = h('tr', [th]);
+    return h('thead', {
+      staticClass: 'v-data-table-header v-data-table-header-mobile'
+    }, [tr]);
+  }
+}));
+// CONCATENATED MODULE: ./node_modules/vuetify/lib/components/VDataTable/VDataTableHeaderDesktop.js
+
+
+
+
+
+
+
+
+/* harmony default export */ var VDataTableHeaderDesktop = (mixins(mixins_header).extend({
+  name: 'v-data-table-header-desktop',
+  methods: {
+    genGroupByToggle: function genGroupByToggle(header) {
+      var _this = this;
+
+      return this.$createElement('span', {
+        on: {
+          click: function click(e) {
+            e.stopPropagation();
+
+            _this.$emit('group', header.value);
+          }
+        }
+      }, ['group']);
+    },
+    getAria: function getAria(beingSorted, isDesc) {
+      var _this2 = this;
+
+      var $t = function $t(key) {
+        return _this2.$vuetify.lang.t("$vuetify.dataTable.ariaLabel.".concat(key));
+      };
+
+      var ariaSort = 'none';
+      var ariaLabel = [$t('sortNone'), $t('activateAscending')];
+
+      if (!beingSorted) {
+        return {
+          ariaSort: ariaSort,
+          ariaLabel: ariaLabel.join(' ')
+        };
+      }
+
+      if (isDesc) {
+        ariaSort = 'descending';
+        ariaLabel = [$t('sortDescending'), $t(this.options.mustSort ? 'activateAscending' : 'activateNone')];
+      } else {
+        ariaSort = 'ascending';
+        ariaLabel = [$t('sortAscending'), $t('activateDescending')];
+      }
+
+      return {
+        ariaSort: ariaSort,
+        ariaLabel: ariaLabel.join(' ')
+      };
+    },
+    genHeader: function genHeader(header) {
+      var _this3 = this;
+
+      var data = {
+        attrs: {
+          role: 'columnheader',
+          scope: 'col',
+          'aria-label': header.text || ''
+        },
+        style: {
+          width: convertToUnit(header.width),
+          minWidth: convertToUnit(header.width)
+        },
+        class: ["text-".concat(header.align || 'start')].concat(_toConsumableArray(wrapInArray(header.class)), [header.divider && 'v-data-table__divider']),
+        on: {}
+      };
+      var children = [];
+
+      if (header.value === 'data-table-select' && !this.singleSelect) {
+        return this.$createElement('th', data, [this.genSelectAll()]);
+      }
+
+      children.push(this.$scopedSlots[header.value] ? this.$scopedSlots[header.value]({
+        header: header
+      }) : this.$createElement('span', [header.text]));
+
+      if (!this.disableSort && (header.sortable || !header.hasOwnProperty('sortable'))) {
+        data.on['click'] = function () {
+          return _this3.$emit('sort', header.value);
+        };
+
+        var sortIndex = this.options.sortBy.findIndex(function (k) {
+          return k === header.value;
+        });
+        var beingSorted = sortIndex >= 0;
+        var isDesc = this.options.sortDesc[sortIndex];
+        data.class.push('sortable');
+
+        var _this$getAria = this.getAria(beingSorted, isDesc),
+            ariaLabel = _this$getAria.ariaLabel,
+            ariaSort = _this$getAria.ariaSort;
+
+        data.attrs['aria-label'] += "".concat(header.text ? ': ' : '').concat(ariaLabel);
+        data.attrs['aria-sort'] = ariaSort;
+
+        if (beingSorted) {
+          data.class.push('active');
+          data.class.push(isDesc ? 'desc' : 'asc');
+        }
+
+        if (header.align === 'end') children.unshift(this.genSortIcon());else children.push(this.genSortIcon());
+
+        if (this.options.multiSort && beingSorted) {
+          children.push(this.$createElement('span', {
+            class: 'v-data-table-header__sort-badge'
+          }, [String(sortIndex + 1)]));
+        }
+      }
+
+      if (this.showGroupBy && header.groupable !== false) children.push(this.genGroupByToggle(header));
+      return this.$createElement('th', data, children);
+    }
+  },
+  render: function render() {
+    var _this4 = this;
+
+    return this.$createElement('thead', {
+      staticClass: 'v-data-table-header'
+    }, [this.$createElement('tr', this.headers.map(function (header) {
+      return _this4.genHeader(header);
+    }))]);
+  }
+}));
+// CONCATENATED MODULE: ./node_modules/vuetify/lib/util/dedupeModelListeners.js
+
+
+
+/**
+ * Removes duplicate `@input` listeners when
+ * using v-model with functional components
+ *
+ * @see https://github.com/vuetifyjs/vuetify/issues/4460
+ */
+function dedupeModelListeners(data) {
+  if (data.model && data.on && data.on.input) {
+    if (Array.isArray(data.on.input)) {
+      var i = data.on.input.indexOf(data.model.callback);
+      if (i > -1) data.on.input.splice(i, 1);
+    } else {
+      delete data.on.input;
+    }
+  }
+}
+// CONCATENATED MODULE: ./node_modules/vuetify/lib/util/rebuildFunctionalSlots.js
+function rebuildFunctionalSlots(slots, h) {
+  var children = [];
+
+  for (var slot in slots) {
+    if (slots.hasOwnProperty(slot)) {
+      children.push(h('template', {
+        slot: slot
+      }, slots[slot]));
+    }
+  }
+
+  return children;
+}
+// CONCATENATED MODULE: ./node_modules/vuetify/lib/components/VDataTable/VDataTableHeader.js
+
+// Styles
+ // Components
+
+
+ // Mixins
+
+ // Utilities
+
+
+
+ // Types
+
+
+/* @vue/component */
+
+/* harmony default export */ var VDataTable_VDataTableHeader = (external_commonjs_vue_commonjs2_vue_root_Vue_default.a.extend({
+  name: 'v-data-table-header',
+  functional: true,
+  props: _objectSpread2(_objectSpread2({}, mixins_header.options.props), {}, {
+    mobile: Boolean
+  }),
+  render: function render(h, _ref) {
+    var props = _ref.props,
+        data = _ref.data,
+        slots = _ref.slots;
+    dedupeModelListeners(data);
+    var children = rebuildFunctionalSlots(slots(), h);
+    data = mergeData(data, {
+      props: props
+    });
+
+    if (props.mobile) {
+      return h(VDataTableHeaderMobile, data, children);
+    } else {
+      return h(VDataTableHeaderDesktop, data, children);
+    }
+  }
+}));
+// CONCATENATED MODULE: ./node_modules/vuetify/lib/components/VDataTable/Row.js
+
+
+// Types
+ // Utils
+
+
+/* harmony default export */ var Row = (external_commonjs_vue_commonjs2_vue_root_Vue_default.a.extend({
+  name: 'row',
+  functional: true,
+  props: {
+    headers: Array,
+    item: Object,
+    rtl: Boolean
+  },
+  render: function render(h, _ref) {
+    var props = _ref.props,
+        slots = _ref.slots,
+        data = _ref.data;
+    var computedSlots = slots();
+    var columns = props.headers.map(function (header) {
+      var _class;
+
+      var children = [];
+      var value = getObjectValueByPath(props.item, header.value);
+      var slotName = header.value;
+      var scopedSlot = data.scopedSlots && data.scopedSlots[slotName];
+      var regularSlot = computedSlots[slotName];
+
+      if (scopedSlot) {
+        children.push(scopedSlot({
+          item: props.item,
+          header: header,
+          value: value
+        }));
+      } else if (regularSlot) {
+        children.push(regularSlot);
+      } else {
+        children.push(value == null ? value : String(value));
+      }
+
+      var textAlign = "text-".concat(header.align || 'start');
+      return h('td', {
+        class: (_class = {}, _defineProperty(_class, textAlign, true), _defineProperty(_class, 'v-data-table__divider', header.divider), _class)
+      }, children);
+    });
+    return h('tr', data, columns);
+  }
+}));
+// CONCATENATED MODULE: ./node_modules/vuetify/lib/components/VDataTable/RowGroup.js
+
+
+/* harmony default export */ var RowGroup = (external_commonjs_vue_commonjs2_vue_root_Vue_default.a.extend({
+  name: 'row-group',
+  functional: true,
+  props: {
+    value: {
+      type: Boolean,
+      default: true
+    },
+    headerClass: {
+      type: String,
+      default: 'v-row-group__header'
+    },
+    contentClass: String,
+    summaryClass: {
+      type: String,
+      default: 'v-row-group__summary'
+    }
+  },
+  render: function render(h, _ref) {
+    var slots = _ref.slots,
+        props = _ref.props;
+    var computedSlots = slots();
+    var children = [];
+
+    if (computedSlots['column.header']) {
+      children.push(h('tr', {
+        staticClass: props.headerClass
+      }, computedSlots['column.header']));
+    } else if (computedSlots['row.header']) {
+      children.push.apply(children, _toConsumableArray(computedSlots['row.header']));
+    }
+
+    if (computedSlots['row.content'] && props.value) children.push.apply(children, _toConsumableArray(computedSlots['row.content']));
+
+    if (computedSlots['column.summary']) {
+      children.push(h('tr', {
+        staticClass: props.summaryClass
+      }, computedSlots['column.summary']));
+    } else if (computedSlots['row.summary']) {
+      children.push.apply(children, _toConsumableArray(computedSlots['row.summary']));
+    }
+
+    return children;
+  }
+}));
+// EXTERNAL MODULE: ./node_modules/vuetify/src/components/VDataTable/VSimpleTable.sass
+var VSimpleTable = __webpack_require__("8b37");
+
+// CONCATENATED MODULE: ./node_modules/vuetify/lib/components/VDataTable/VSimpleTable.js
+
+
+
+
+
+
+/* harmony default export */ var VDataTable_VSimpleTable = (mixins(themeable).extend({
+  name: 'v-simple-table',
+  props: {
+    dense: Boolean,
+    fixedHeader: Boolean,
+    height: [Number, String]
+  },
+  computed: {
+    classes: function classes() {
+      return _objectSpread2({
+        'v-data-table--dense': this.dense,
+        'v-data-table--fixed-height': !!this.height && !this.fixedHeader,
+        'v-data-table--fixed-header': this.fixedHeader
+      }, this.themeClasses);
+    }
+  },
+  methods: {
+    genWrapper: function genWrapper() {
+      return this.$slots.wrapper || this.$createElement('div', {
+        staticClass: 'v-data-table__wrapper',
+        style: {
+          height: convertToUnit(this.height)
+        }
+      }, [this.$createElement('table', this.$slots.default)]);
+    }
+  },
+  render: function render(h) {
+    return h('div', {
+      staticClass: 'v-data-table',
+      class: this.classes
+    }, [this.$slots.top, this.genWrapper(), this.$slots.bottom]);
+  }
+}));
+// CONCATENATED MODULE: ./node_modules/vuetify/lib/components/VDataTable/MobileRow.js
+
+
+
+
+/* harmony default export */ var MobileRow = (external_commonjs_vue_commonjs2_vue_root_Vue_default.a.extend({
+  name: 'row',
+  functional: true,
+  props: {
+    headers: Array,
+    hideDefaultHeader: Boolean,
+    item: Object,
+    rtl: Boolean
+  },
+  render: function render(h, _ref) {
+    var props = _ref.props,
+        slots = _ref.slots,
+        data = _ref.data;
+    var computedSlots = slots();
+    var columns = props.headers.map(function (header) {
+      var classes = {
+        'v-data-table__mobile-row': true
+      };
+      var children = [];
+      var value = getObjectValueByPath(props.item, header.value);
+      var slotName = header.value;
+      var scopedSlot = data.scopedSlots && data.scopedSlots[slotName];
+      var regularSlot = computedSlots[slotName];
+
+      if (scopedSlot) {
+        children.push(scopedSlot({
+          item: props.item,
+          header: header,
+          value: value
+        }));
+      } else if (regularSlot) {
+        children.push(regularSlot);
+      } else {
+        children.push(value == null ? value : String(value));
+      }
+
+      var mobileRowChildren = [h('div', {
+        staticClass: 'v-data-table__mobile-row__cell'
+      }, children)];
+
+      if (header.value !== 'dataTableSelect' && !props.hideDefaultHeader) {
+        mobileRowChildren.unshift(h('div', {
+          staticClass: 'v-data-table__mobile-row__header'
+        }, [header.text]));
+      }
+
+      return h('td', {
+        class: classes
+      }, mobileRowChildren);
+    });
+    return h('tr', _objectSpread2(_objectSpread2({}, data), {}, {
+      staticClass: 'v-data-table__mobile-table-row'
+    }), columns);
+  }
+}));
+// CONCATENATED MODULE: ./node_modules/vuetify/lib/components/VDataTable/VDataTable.js
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+ // Components
+
+
+
+
+ // import VVirtualTable from './VVirtualTable'
+
+
+
+
+
+
+ // Mixins
+
+ // Directives
+
+ // Helpers
+
+
+
+
+
+
+function filterFn(item, search, filter) {
+  return function (header) {
+    var value = getObjectValueByPath(item, header.value);
+    return header.filter ? header.filter(value, search, item) : filter(value, search, item);
+  };
+}
+
+function searchTableItems(items, search, headersWithCustomFilters, headersWithoutCustomFilters, customFilter) {
+  search = typeof search === 'string' ? search.trim() : null;
+  return items.filter(function (item) {
+    // Headers with custom filters are evaluated whether or not a search term has been provided.
+    // We need to match every filter to be included in the results.
+    var matchesColumnFilters = headersWithCustomFilters.every(filterFn(item, search, defaultFilter)); // Headers without custom filters are only filtered by the `search` property if it is defined.
+    // We only need a single column to match the search term to be included in the results.
+
+    var matchesSearchTerm = !search || headersWithoutCustomFilters.some(filterFn(item, search, customFilter));
+    return matchesColumnFilters && matchesSearchTerm;
+  });
+}
+/* @vue/component */
+
+
+/* harmony default export */ var VDataTable_VDataTable = (mixins(VDataIterator, loadable).extend({
+  name: 'v-data-table',
+  // https://github.com/vuejs/vue/issues/6872
+  directives: {
+    ripple: ripple
+  },
+  props: {
+    headers: {
+      type: Array,
+      default: function _default() {
+        return [];
+      }
+    },
+    showSelect: Boolean,
+    showExpand: Boolean,
+    showGroupBy: Boolean,
+    // TODO: Fix
+    // virtualRows: Boolean,
+    height: [Number, String],
+    hideDefaultHeader: Boolean,
+    caption: String,
+    dense: Boolean,
+    headerProps: Object,
+    calculateWidths: Boolean,
+    fixedHeader: Boolean,
+    headersLength: Number,
+    expandIcon: {
+      type: String,
+      default: '$expand'
+    },
+    customFilter: {
+      type: Function,
+      default: defaultFilter
+    },
+    itemClass: {
+      type: [String, Function],
+      default: function _default() {
+        return '';
+      }
+    },
+    loaderHeight: {
+      type: [Number, String],
+      default: 4
+    }
+  },
+  data: function data() {
+    return {
+      internalGroupBy: [],
+      openCache: {},
+      widths: []
+    };
+  },
+  computed: {
+    computedHeaders: function computedHeaders() {
+      var _this = this;
+
+      if (!this.headers) return [];
+      var headers = this.headers.filter(function (h) {
+        return h.value === undefined || !_this.internalGroupBy.find(function (v) {
+          return v === h.value;
+        });
+      });
+      var defaultHeader = {
+        text: '',
+        sortable: false,
+        width: '1px'
+      };
+
+      if (this.showSelect) {
+        var index = headers.findIndex(function (h) {
+          return h.value === 'data-table-select';
+        });
+        if (index < 0) headers.unshift(_objectSpread2(_objectSpread2({}, defaultHeader), {}, {
+          value: 'data-table-select'
+        }));else headers.splice(index, 1, _objectSpread2(_objectSpread2({}, defaultHeader), headers[index]));
+      }
+
+      if (this.showExpand) {
+        var _index = headers.findIndex(function (h) {
+          return h.value === 'data-table-expand';
+        });
+
+        if (_index < 0) headers.unshift(_objectSpread2(_objectSpread2({}, defaultHeader), {}, {
+          value: 'data-table-expand'
+        }));else headers.splice(_index, 1, _objectSpread2(_objectSpread2({}, defaultHeader), headers[_index]));
+      }
+
+      return headers;
+    },
+    colspanAttrs: function colspanAttrs() {
+      return this.isMobile ? undefined : {
+        colspan: this.headersLength || this.computedHeaders.length
+      };
+    },
+    columnSorters: function columnSorters() {
+      return this.computedHeaders.reduce(function (acc, header) {
+        if (header.sort) acc[header.value] = header.sort;
+        return acc;
+      }, {});
+    },
+    headersWithCustomFilters: function headersWithCustomFilters() {
+      return this.headers.filter(function (header) {
+        return header.filter && (!header.hasOwnProperty('filterable') || header.filterable === true);
+      });
+    },
+    headersWithoutCustomFilters: function headersWithoutCustomFilters() {
+      return this.headers.filter(function (header) {
+        return !header.filter && (!header.hasOwnProperty('filterable') || header.filterable === true);
+      });
+    },
+    sanitizedHeaderProps: function sanitizedHeaderProps() {
+      return camelizeObjectKeys(this.headerProps);
+    },
+    computedItemsPerPage: function computedItemsPerPage() {
+      var itemsPerPage = this.options && this.options.itemsPerPage ? this.options.itemsPerPage : this.itemsPerPage;
+      var itemsPerPageOptions = this.sanitizedFooterProps.itemsPerPageOptions;
+
+      if (itemsPerPageOptions && !itemsPerPageOptions.find(function (item) {
+        return typeof item === 'number' ? item === itemsPerPage : item.value === itemsPerPage;
+      })) {
+        var firstOption = itemsPerPageOptions[0];
+        return _typeof(firstOption) === 'object' ? firstOption.value : firstOption;
+      }
+
+      return itemsPerPage;
+    }
+  },
+  created: function created() {
+    var _this2 = this;
+
+    var breakingProps = [['sort-icon', 'header-props.sort-icon'], ['hide-headers', 'hide-default-header'], ['select-all', 'show-select']];
+    /* istanbul ignore next */
+
+    breakingProps.forEach(function (_ref) {
+      var _ref2 = _slicedToArray(_ref, 2),
+          original = _ref2[0],
+          replacement = _ref2[1];
+
+      if (_this2.$attrs.hasOwnProperty(original)) breaking(original, replacement, _this2);
+    });
+  },
+  mounted: function mounted() {
+    // if ((!this.sortBy || !this.sortBy.length) && (!this.options.sortBy || !this.options.sortBy.length)) {
+    //   const firstSortable = this.headers.find(h => !('sortable' in h) || !!h.sortable)
+    //   if (firstSortable) this.updateOptions({ sortBy: [firstSortable.value], sortDesc: [false] })
+    // }
+    if (this.calculateWidths) {
+      window.addEventListener('resize', this.calcWidths);
+      this.calcWidths();
+    }
+  },
+  beforeDestroy: function beforeDestroy() {
+    if (this.calculateWidths) {
+      window.removeEventListener('resize', this.calcWidths);
+    }
+  },
+  methods: {
+    calcWidths: function calcWidths() {
+      this.widths = Array.from(this.$el.querySelectorAll('th')).map(function (e) {
+        return e.clientWidth;
+      });
+    },
+    customFilterWithColumns: function customFilterWithColumns(items, search) {
+      return searchTableItems(items, search, this.headersWithCustomFilters, this.headersWithoutCustomFilters, this.customFilter);
+    },
+    customSortWithHeaders: function customSortWithHeaders(items, sortBy, sortDesc, locale) {
+      return this.customSort(items, sortBy, sortDesc, locale, this.columnSorters);
+    },
+    createItemProps: function createItemProps(item) {
+      var props = VDataIterator.options.methods.createItemProps.call(this, item);
+      return Object.assign(props, {
+        headers: this.computedHeaders
+      });
+    },
+    genCaption: function genCaption(props) {
+      if (this.caption) return [this.$createElement('caption', [this.caption])];
+      return getSlot(this, 'caption', props, true);
+    },
+    genColgroup: function genColgroup(props) {
+      var _this3 = this;
+
+      return this.$createElement('colgroup', this.computedHeaders.map(function (header) {
+        return _this3.$createElement('col', {
+          class: {
+            divider: header.divider
+          }
+        });
+      }));
+    },
+    genLoading: function genLoading() {
+      var th = this.$createElement('th', {
+        staticClass: 'column',
+        attrs: this.colspanAttrs
+      }, [this.genProgress()]);
+      var tr = this.$createElement('tr', {
+        staticClass: 'v-data-table__progress'
+      }, [th]);
+      return this.$createElement('thead', [tr]);
+    },
+    genHeaders: function genHeaders(props) {
+      var data = {
+        props: _objectSpread2(_objectSpread2({}, this.sanitizedHeaderProps), {}, {
+          headers: this.computedHeaders,
+          options: props.options,
+          mobile: this.isMobile,
+          showGroupBy: this.showGroupBy,
+          someItems: this.someItems,
+          everyItem: this.everyItem,
+          singleSelect: this.singleSelect,
+          disableSort: this.disableSort
+        }),
+        on: {
+          sort: props.sort,
+          group: props.group,
+          'toggle-select-all': this.toggleSelectAll
+        }
+      };
+      var children = [getSlot(this, 'header', data)];
+
+      if (!this.hideDefaultHeader) {
+        var scopedSlots = getPrefixedScopedSlots('header.', this.$scopedSlots);
+        children.push(this.$createElement(VDataTable_VDataTableHeader, _objectSpread2(_objectSpread2({}, data), {}, {
+          scopedSlots: scopedSlots
+        })));
+      }
+
+      if (this.loading) children.push(this.genLoading());
+      return children;
+    },
+    genEmptyWrapper: function genEmptyWrapper(content) {
+      return this.$createElement('tr', {
+        staticClass: 'v-data-table__empty-wrapper'
+      }, [this.$createElement('td', {
+        attrs: this.colspanAttrs
+      }, content)]);
+    },
+    genItems: function genItems(items, props) {
+      var empty = this.genEmpty(props.originalItemsLength, props.pagination.itemsLength);
+      if (empty) return [empty];
+      return props.groupedItems ? this.genGroupedRows(props.groupedItems, props) : this.genRows(items, props);
+    },
+    genGroupedRows: function genGroupedRows(groupedItems, props) {
+      var _this4 = this;
+
+      return groupedItems.map(function (group) {
+        if (!_this4.openCache.hasOwnProperty(group.name)) _this4.$set(_this4.openCache, group.name, true);
+
+        if (_this4.$scopedSlots.group) {
+          return _this4.$scopedSlots.group({
+            group: group.name,
+            options: props.options,
+            items: group.items,
+            headers: _this4.computedHeaders
+          });
+        } else {
+          return _this4.genDefaultGroupedRow(group.name, group.items, props);
+        }
+      });
+    },
+    genDefaultGroupedRow: function genDefaultGroupedRow(group, items, props) {
+      var _this5 = this;
+
+      var isOpen = !!this.openCache[group];
+      var children = [this.$createElement('template', {
+        slot: 'row.content'
+      }, this.genRows(items, props))];
+
+      var toggleFn = function toggleFn() {
+        return _this5.$set(_this5.openCache, group, !_this5.openCache[group]);
+      };
+
+      var removeFn = function removeFn() {
+        return props.updateOptions({
+          groupBy: [],
+          groupDesc: []
+        });
+      };
+
+      if (this.$scopedSlots['group.header']) {
+        children.unshift(this.$createElement('template', {
+          slot: 'column.header'
+        }, [this.$scopedSlots['group.header']({
+          group: group,
+          groupBy: props.options.groupBy,
+          items: items,
+          headers: this.computedHeaders,
+          isOpen: isOpen,
+          toggle: toggleFn,
+          remove: removeFn
+        })]));
+      } else {
+        var toggle = this.$createElement(components_VBtn, {
+          staticClass: 'ma-0',
+          props: {
+            icon: true,
+            small: true
+          },
+          on: {
+            click: toggleFn
+          }
+        }, [this.$createElement(components_VIcon, [isOpen ? '$minus' : '$plus'])]);
+        var remove = this.$createElement(components_VBtn, {
+          staticClass: 'ma-0',
+          props: {
+            icon: true,
+            small: true
+          },
+          on: {
+            click: removeFn
+          }
+        }, [this.$createElement(components_VIcon, ['$close'])]);
+        var column = this.$createElement('td', {
+          staticClass: 'text-start',
+          attrs: this.colspanAttrs
+        }, [toggle, "".concat(props.options.groupBy[0], ": ").concat(group), remove]);
+        children.unshift(this.$createElement('template', {
+          slot: 'column.header'
+        }, [column]));
+      }
+
+      if (this.$scopedSlots['group.summary']) {
+        children.push(this.$createElement('template', {
+          slot: 'column.summary'
+        }, [this.$scopedSlots['group.summary']({
+          group: group,
+          groupBy: props.options.groupBy,
+          items: items,
+          headers: this.computedHeaders,
+          isOpen: isOpen,
+          toggle: toggleFn
+        })]));
+      }
+
+      return this.$createElement(RowGroup, {
+        key: group,
+        props: {
+          value: isOpen
+        }
+      }, children);
+    },
+    genRows: function genRows(items, props) {
+      return this.$scopedSlots.item ? this.genScopedRows(items, props) : this.genDefaultRows(items, props);
+    },
+    genScopedRows: function genScopedRows(items, props) {
+      var rows = [];
+
+      for (var i = 0; i < items.length; i++) {
+        var item = items[i];
+        rows.push(this.$scopedSlots.item(_objectSpread2(_objectSpread2({}, this.createItemProps(item)), {}, {
+          index: i
+        })));
+
+        if (this.isExpanded(item)) {
+          rows.push(this.$scopedSlots['expanded-item']({
+            item: item,
+            headers: this.computedHeaders
+          }));
+        }
+      }
+
+      return rows;
+    },
+    genDefaultRows: function genDefaultRows(items, props) {
+      var _this6 = this;
+
+      return this.$scopedSlots['expanded-item'] ? items.map(function (item) {
+        return _this6.genDefaultExpandedRow(item);
+      }) : items.map(function (item) {
+        return _this6.genDefaultSimpleRow(item);
+      });
+    },
+    genDefaultExpandedRow: function genDefaultExpandedRow(item) {
+      var isExpanded = this.isExpanded(item);
+      var classes = {
+        'v-data-table__expanded v-data-table__expanded__row': isExpanded
+      };
+      var headerRow = this.genDefaultSimpleRow(item, classes);
+      var expandedRow = this.$createElement('tr', {
+        staticClass: 'v-data-table__expanded v-data-table__expanded__content'
+      }, [this.$scopedSlots['expanded-item']({
+        item: item,
+        headers: this.computedHeaders
+      })]);
+      return this.$createElement(RowGroup, {
+        props: {
+          value: isExpanded
+        }
+      }, [this.$createElement('template', {
+        slot: 'row.header'
+      }, [headerRow]), this.$createElement('template', {
+        slot: 'row.content'
+      }, [expandedRow])]);
+    },
+    genDefaultSimpleRow: function genDefaultSimpleRow(item) {
+      var _this7 = this;
+
+      var classes = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : {};
+      var scopedSlots = getPrefixedScopedSlots('item.', this.$scopedSlots);
+      var data = this.createItemProps(item);
+
+      if (this.showSelect) {
+        var slot = scopedSlots['data-table-select'];
+        scopedSlots['data-table-select'] = slot ? function () {
+          return slot(data);
+        } : function () {
+          return _this7.$createElement(VCheckbox_VSimpleCheckbox, {
+            staticClass: 'v-data-table__checkbox',
+            props: {
+              value: data.isSelected,
+              disabled: !_this7.isSelectable(item)
+            },
+            on: {
+              input: function input(val) {
+                return data.select(val);
+              }
+            }
+          });
+        };
+      }
+
+      if (this.showExpand) {
+        var _slot = scopedSlots['data-table-expand'];
+        scopedSlots['data-table-expand'] = _slot ? function () {
+          return _slot(data);
+        } : function () {
+          return _this7.$createElement(components_VIcon, {
+            staticClass: 'v-data-table__expand-icon',
+            class: {
+              'v-data-table__expand-icon--active': data.isExpanded
+            },
+            on: {
+              click: function click(e) {
+                e.stopPropagation();
+                data.expand(!data.isExpanded);
+              }
+            }
+          }, [_this7.expandIcon]);
+        };
+      }
+
+      return this.$createElement(this.isMobile ? MobileRow : Row, {
+        key: getObjectValueByPath(item, this.itemKey),
+        class: mergeClasses(_objectSpread2(_objectSpread2({}, classes), {}, {
+          'v-data-table__selected': data.isSelected
+        }), getPropertyFromItem(item, this.itemClass)),
+        props: {
+          headers: this.computedHeaders,
+          hideDefaultHeader: this.hideDefaultHeader,
+          item: item,
+          rtl: this.$vuetify.rtl
+        },
+        scopedSlots: scopedSlots,
+        on: {
+          // TODO: for click, the first argument should be the event, and the second argument should be data,
+          // but this is a breaking change so it's for v3
+          click: function click() {
+            return _this7.$emit('click:row', item, data);
+          },
+          contextmenu: function contextmenu(event) {
+            return _this7.$emit('contextmenu:row', event, data);
+          },
+          dblclick: function dblclick(event) {
+            return _this7.$emit('dblclick:row', event, data);
+          }
+        }
+      });
+    },
+    genBody: function genBody(props) {
+      var data = _objectSpread2(_objectSpread2({}, props), {}, {
+        expand: this.expand,
+        headers: this.computedHeaders,
+        isExpanded: this.isExpanded,
+        isMobile: this.isMobile,
+        isSelected: this.isSelected,
+        select: this.select
+      });
+
+      if (this.$scopedSlots.body) {
+        return this.$scopedSlots.body(data);
+      }
+
+      return this.$createElement('tbody', [getSlot(this, 'body.prepend', data, true), this.genItems(props.items, props), getSlot(this, 'body.append', data, true)]);
+    },
+    genFooters: function genFooters(props) {
+      var data = {
+        props: _objectSpread2({
+          options: props.options,
+          pagination: props.pagination,
+          itemsPerPageText: '$vuetify.dataTable.itemsPerPageText'
+        }, this.sanitizedFooterProps),
+        on: {
+          'update:options': function updateOptions(value) {
+            return props.updateOptions(value);
+          }
+        },
+        widths: this.widths,
+        headers: this.computedHeaders
+      };
+      var children = [getSlot(this, 'footer', data, true)];
+
+      if (!this.hideDefaultFooter) {
+        children.push(this.$createElement(VDataIterator_VDataFooter, _objectSpread2(_objectSpread2({}, data), {}, {
+          scopedSlots: getPrefixedScopedSlots('footer.', this.$scopedSlots)
+        })));
+      }
+
+      return children;
+    },
+    genDefaultScopedSlot: function genDefaultScopedSlot(props) {
+      var simpleProps = {
+        height: this.height,
+        fixedHeader: this.fixedHeader,
+        dense: this.dense
+      }; // if (this.virtualRows) {
+      //   return this.$createElement(VVirtualTable, {
+      //     props: Object.assign(simpleProps, {
+      //       items: props.items,
+      //       height: this.height,
+      //       rowHeight: this.dense ? 24 : 48,
+      //       headerHeight: this.dense ? 32 : 48,
+      //       // TODO: expose rest of props from virtual table?
+      //     }),
+      //     scopedSlots: {
+      //       items: ({ items }) => this.genItems(items, props) as any,
+      //     },
+      //   }, [
+      //     this.proxySlot('body.before', [this.genCaption(props), this.genHeaders(props)]),
+      //     this.proxySlot('bottom', this.genFooters(props)),
+      //   ])
+      // }
+
+      return this.$createElement(VDataTable_VSimpleTable, {
+        props: simpleProps
+      }, [this.proxySlot('top', getSlot(this, 'top', props, true)), this.genCaption(props), this.genColgroup(props), this.genHeaders(props), this.genBody(props), this.proxySlot('bottom', this.genFooters(props))]);
+    },
+    proxySlot: function proxySlot(slot, content) {
+      return this.$createElement('template', {
+        slot: slot
+      }, content);
+    }
+  },
+  render: function render() {
+    var _this8 = this;
+
+    return this.$createElement(VData, {
+      props: _objectSpread2(_objectSpread2({}, this.$props), {}, {
+        customFilter: this.customFilterWithColumns,
+        customSort: this.customSortWithHeaders,
+        itemsPerPage: this.computedItemsPerPage
+      }),
+      on: {
+        'update:options': function updateOptions(v, old) {
+          _this8.internalGroupBy = v.groupBy || [];
+          !deepEqual(v, old) && _this8.$emit('update:options', v);
+        },
+        'update:page': function updatePage(v) {
+          return _this8.$emit('update:page', v);
+        },
+        'update:items-per-page': function updateItemsPerPage(v) {
+          return _this8.$emit('update:items-per-page', v);
+        },
+        'update:sort-by': function updateSortBy(v) {
+          return _this8.$emit('update:sort-by', v);
+        },
+        'update:sort-desc': function updateSortDesc(v) {
+          return _this8.$emit('update:sort-desc', v);
+        },
+        'update:group-by': function updateGroupBy(v) {
+          return _this8.$emit('update:group-by', v);
+        },
+        'update:group-desc': function updateGroupDesc(v) {
+          return _this8.$emit('update:group-desc', v);
+        },
+        pagination: function pagination(v, old) {
+          return !deepEqual(v, old) && _this8.$emit('pagination', v);
+        },
+        'current-items': function currentItems(v) {
+          _this8.internalCurrentItems = v;
+
+          _this8.$emit('current-items', v);
+        },
+        'page-count': function pageCount(v) {
+          return _this8.$emit('page-count', v);
+        }
+      },
+      scopedSlots: {
+        default: this.genDefaultScopedSlot
+      }
+    });
+  }
+}));
+// CONCATENATED MODULE: ./node_modules/cache-loader/dist/cjs.js?{"cacheDirectory":"node_modules/.cache/vue-loader","cacheIdentifier":"60263d6e-vue-loader-template"}!./node_modules/vue-loader/lib/loaders/templateLoader.js??vue-loader-options!./node_modules/cache-loader/dist/cjs.js??ref--0-0!./node_modules/vue-loader/lib??vue-loader-options!./src/components/form/Button.vue?vue&type=template&id=7ba61cec&
 var Buttonvue_type_template_id_7ba61cec_render = function () {var _vm=this;var _h=_vm.$createElement;var _c=_vm._self._c||_h;return _c('v-btn',[_vm._t("default")],2)}
 var Buttonvue_type_template_id_7ba61cec_staticRenderFns = []
 
@@ -18376,6 +22458,7 @@ external_commonjs_vue_commonjs2_vue_root_Vue_default.a.use(framework_Vuetify);
 framework_Vuetify.config.silent = true;
 /* harmony default export */ var vuetify = (new framework_Vuetify({}));
 // CONCATENATED MODULE: ./index.js
+
 
 
 

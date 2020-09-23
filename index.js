@@ -5,8 +5,6 @@ export { default as TPageNavigationTabs } from './src/components/navigation/Page
 
 export { VDataTable } from 'vuetify/lib';
 
-
-
 export { default as TButton } from './src/components/form/Button.vue';
 
 import vuetify from './src/plugins/vuetify';
