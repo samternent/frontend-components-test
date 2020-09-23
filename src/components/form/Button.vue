@@ -1,5 +1,5 @@
 <template>
-  <v-button>
+  <v-btn>
     <slot/>
-  </v-button>
+  </v-btn>
 </template>
