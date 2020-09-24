@@ -5,10 +5,7 @@ export { default as TPageNavigationTabs } from './src/components/navigation/Page
 
 // Export components directly from the vuetify lib
 export { VDataTable as VDataTable } from 'vuetify/lib';
-
-// export wrapped components.
-// export only the custom button and not vuetify button for consistency
-export { default as TButton } from './src/components/form/Button.vue';
+export { VBtn as VBtn } from 'vuetify/lib';
 
 import vuetify from './src/plugins/vuetify';
 

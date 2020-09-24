@@ -4,5 +4,4 @@ import Vuetify from 'vuetify/lib';
 Vue.use(Vuetify);
 Vuetify.config.silent = true
 
-export default new Vuetify({
-});
+export default new Vuetify({});

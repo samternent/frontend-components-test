@@ -1,0 +1,444 @@
+/**
+* As far as possible, this file should be just for generics and application layout.
+* We should store component css within the component file.
+**/
+
+/* Structure */
+@import url("https://fonts.googleapis.com/css2?family=Open+Sans:wght@300;400;500;600;700&display=swap");
+
+/* Override fonts - it won't work here as it should be in root /sass or /scss folder*/
+$body-font-family: "Open Sans",
+"Helvetica Neue",
+Helvetica,
+Arial,
+sans-serif;
+
+$typoOptions: text-6,
+text-5,
+text-4,
+text-3,
+text-2,
+text-1,
+text-subtitle-1,
+text-subtitle-2,
+text-body-1,
+text-body-2,
+text-button,
+text-caption,
+text-overline;
+
+
+.v-ripple__container {
+  display: none !important;
+}
+
+#inspire {
+  height: 100%;
+
+  @each $typoOption in $typoOptions {
+    .#{$typoOption} {
+      font-family: $body-font-family, sans-serif !important;
+    }
+  }
+
+  .leading-1 {
+    line-height: 1.1;
+  }
+
+  .leading-2 {
+    line-height: 1.2;
+  }
+
+  .leading-3 {
+    line-height: 1.3;
+  }
+
+  .leading-4 {
+    line-height: 1.4;
+  }
+
+  .leading-5 {
+    line-height: 1.5;
+  }
+}
+
+html {
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+}
+
+body {
+  width: 100%;
+  height: 100%;
+  margin: 0;
+  background-color: #f6f7f9;
+  overflow: hidden;
+}
+
+#main {
+  height: calc(100vh - 46px);
+  overflow: auto;
+}
+
+/* Line height */
+.v-application {
+  font-family: $body-font-family, sans-serif;
+
+  .leading-1 {
+    line-height: 1.1;
+  }
+
+  .leading-2 {
+    line-height: 1.2;
+  }
+
+  .leading-3 {
+    line-height: 1.3;
+  }
+
+  .leading-4 {
+    line-height: 1.4;
+  }
+
+  .leading-5 {
+    line-height: 1.5;
+  }
+}
+
+/* Tweaks to tags */
+h1,
+h3 {
+  font-weight: normal;
+  text-align: left;
+}
+
+/**
+* Tweaks to vuetify styling
+* We should be careful not to break anything. Just simple cosmetic changes.
+**/
+.v-tab {
+  /* half the padding is grand */
+  padding-left: 15px !important;
+  padding-right: 15px !important;
+  min-width: 70px;
+}
+
+.v-tab,
+.v-btn__content {
+  /* We don't want all caps buttons! */
+  text-transform: none !important;
+  /* that letter spacing is weird */
+  letter-spacing: 0 !important;
+}
+
+
+/* markdown editor styling */
+.v-md-editor {
+  box-shadow: none;
+  border: 1px solid #ddd;
+
+  ul.v-md-editor__toolbar-left {
+    padding-left: 0;
+  }
+
+  .v-md-editor__tooltip {
+    background: #333;
+    font-size: 11px;
+  }
+}
+
+/* make border light of table */
+.theme--light.v-data-table>.v-data-table__wrapper>table>tbody>tr:not(:last-child)>td:not(.v-data-table__mobile-row),
+.theme--light.v-data-table>.v-data-table__wrapper>table>tbody>tr:not(:last-child)>th:not(.v-data-table__mobile-row) {
+  border-color: rgba(0, 0, 0, 0.08);
+}
+
+.theme--light.v-data-table .v-data-footer {
+  border-color: rgba(0, 0, 0, 0.08);
+}
+
+/* helper styles */
+a {
+  &.tw-link {
+    color: #3b93f7;
+    cursor: pointer;
+    text-decoration: none;
+
+    &:hover {
+      color: #4ba3ff;
+    }
+  }
+
+  &.tw-link--inverted {
+    color: #999 !important;
+    cursor: pointer;
+    text-decoration: none;
+
+    &:hover {
+      color: #4ba3ff !important;
+    }
+  }
+}
+
+/* hidden until hover */
+.huh {
+  display: none;
+}
+
+/* invisible until hover */
+.iuh {
+  visibility: hidden;
+}
+
+/* show on hover */
+.hs:hover {
+  .huh,
+  .iuh {
+    display: inherit;
+    visibility: inherit;
+  }
+}
+
+.cursor-pointer {
+  cursor: pointer;
+}
+
+.cursor-move {
+  cursor: move;
+}
+
+.w-auto {
+  width: auto !important;
+}
+
+.h-auto {
+  height: auto !important
+}
+
+.w-full{
+  width: 100% !important;
+}
+
+/* ghost class will be applied by 'vue-draggable' on drag start */
+.sortable-ghost {
+  .v-expansion-panel-header {
+    background-color: #ffffff;
+  }
+}
+
+/* Application Specific Layout */
+
+.position-absolute {
+  position: absolute;
+}
+
+.position-sticky {
+  position: sticky;
+}
+
+.position-relative {
+  position: relative;
+}
+
+.font-weight-semibold {
+  font-weight: 600 !important;
+}
+
+.fill-height-child-first > *:first-child {
+  height: 100% !important;
+}
+
+.fill-height-child-last > *:last-child {
+  height: 100% !important;
+}
+
+.flex-basis-auto {
+  flex-basis: auto !important;
+}
+
+.flex-basis-100 {
+  flex-basis: 100% !important;
+}
+
+.flex-basis-child-first-100 > *:first-child {
+  flex-basis: 100% !important;
+}
+
+.flex-basis-child-last-100 > *:last-child {
+  flex-basis: 100% !important;
+}
+
+.border-top-1 {
+  border-top: 1px solid;
+}
+
+.border-none {
+  border: 0 !important;
+}
+
+/* Application Specific Layout */
+.tw-icon {
+  fill: currentColor;
+}
+
+.tw-page-toolbar__wrapper {
+  padding: 20px 20px 0px 20px;
+}
+
+.tw-page-toolbar {
+  .tw-page-toolbar__title {
+    font-size: 24px;
+    font-weight: 600;
+  }
+}
+
+.tw-midline-toolbar__title {
+  font-size: 16px;
+  padding: 0;
+}
+
+.tw-midline-toolbar__separator {
+  -webkit-box-flex: 1;
+  -ms-flex: 1;
+  flex: 1;
+  width: 100%;
+  height: 1px;
+  background-color: #eeeeee;
+  margin: 0 10px;
+  pointer-events: none;
+}
+
+/* padding is for standard pages where you are happy for everything to scroll */
+.tw-page-content {
+  padding: 10px 35px 20px 35px;
+}
+
+/* content width = width - drawer flex-basis width (when closed) */
+.tw-page-content--with-drawer {
+  width: calc(100% - 50px);
+}
+
+/* default thin gray border, blue border on focus */
+.tw-input--default {
+  .v-select__selection, input {
+    font-size: 13px;
+  }
+
+  .v-input__control {
+    border: 1px solid #cfcfcf;
+  }
+
+  &.v-input--is-focused {
+    .v-input__control {
+      border: 1px solid #63a9f9;
+    }
+  }
+}
+
+/* adjust drop down lists to teamwork style (less padding) */
+.v-list--teamwork {
+  .v-subheader {
+    margin-top: -10px;
+  }
+
+  &.v-list--dense .v-list-item__icon {
+    height: auto;
+    margin-right: 10px;
+  }
+
+  &.v-list--dense .v-list-item {
+    min-height: 32px;
+  }
+}
+
+/* sidebar Panel */
+.tw-right-drawer {
+  border-left: 1px solid #f7f7f7;
+  box-shadow: -4px 0px 5px -6px rgba(0, 0, 0, 0.2);
+}
+
+.tw-right-drawer__toolbar {
+  width: 100%;
+  border-bottom: 1px solid #f5f5f5;
+}
+
+.tw-right-drawer__row {
+  min-height: 40px;
+  position: relative;
+  padding: 0 20px 30px 60px;
+  border-top: 1px solid #fff;
+
+  .icon {
+    position: absolute;
+    top: 2px;
+    left: 20px;
+  }
+
+  .icon-close {
+    position: absolute;
+    top: 0px;
+    right: 20px;
+  }
+}
+
+.tw-right-drawer__input {
+  .v-input__slot {
+    padding: 5px !important;
+    margin-left: -5px;
+    margin-top: -5px;
+
+    &:before {
+      border-style: none !important;
+    }
+
+    &:after {
+      border-style: none !important;
+    }
+  }
+
+  textarea {
+    border: thin solid #fff !important;
+
+    &:hover {
+      border: thin solid rgba(0, 0, 0, 0.2) !important;
+    }
+
+    &:focus {
+      border: thin solid #3b93f7 !important;
+    }
+  }
+}
+
+/* no label animation */
+.no-label-animation.v-input--is-focused,
+.no-label-animation.v-input--is-label-active {
+  fieldset {
+    top: 0;
+  }
+
+  fieldset legend {
+    display: none;
+  }
+
+  .v-label.v-label--active {
+    opacity: 0;
+  }
+}
+
+/* button */
+// TODO: Only used at single place move to component
+.v-btn.no-bg {
+  background: transparent !important;
+}
+.v-btn.no-hover-bg:before {
+  background: transparent !important;
+}
+.v-btn.hover-text-dark-grey:hover {
+  color: #666 !important;
+}
+
+/* Smaller checkboxes nicer sometimes */
+.v-simple-checkbox--tw--small i {
+  font-size: 20px !important;
+}
