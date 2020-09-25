@@ -10,7 +10,7 @@
       <the-sidebar>
         <slot name='the-sidebar'/>
       </the-sidebar>
-      <main class="flex-1">
+      <main class="content">
         <slot/>
       </main>
     </div>
@@ -29,7 +29,8 @@ export default {
 .flex {
   display: flex;
 }
-.flex-1{
+.content {
+  height: calc(100vh - 50px);
   flex: 1;
 }
 </style>
